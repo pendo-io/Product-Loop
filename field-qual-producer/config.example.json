@@ -1,0 +1,19 @@
+{
+  "_comment": "Example config for field-qual-producer. Copy to config.json and fill in your own values. Don't commit a real config.json.",
+  "focus_areas": ["<Product area name>", "<Another product area>"],
+  "user": { "name": "<your name>", "email": "<your work email>" },
+  "timezone": "<IANA timezone, for example America/Denver>",
+  "last_run": null,
+  "field_qual": {
+    "retrieval_mode": "auto",
+    "watch_accounts": [],
+    "_watch_accounts_example": [{ "name": "<Account name as your call tool resolves it>", "crm_id": null }],
+    "keywords": [],
+    "_keywords_example": [{ "term": "<Product area name>", "aliases": ["<codename>", "<common transcription variant>"], "source": "area" }],
+    "reported": [],
+    "slack_digest": null,
+    "_slack_digest_example": { "channel": "<channel name or id>" },
+    "features_db": null,
+    "convergence_min_accounts": 3
+  }
+}
