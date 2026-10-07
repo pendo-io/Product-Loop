@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+SKILL_DIR="${HOME}/.claude/skills/product-loop"
+REPO="https://github.com/pendo-io/Product-Loop.git"
+
+if [ -d "$SKILL_DIR" ]; then
+  echo "Product-Loop already installed. Updating..."
+  git -C "$SKILL_DIR" pull --ff-only
+  echo "Updated."
+else
+  echo "Installing Product-Loop..."
+  mkdir -p "$(dirname "$SKILL_DIR")"
+  git clone --depth 1 "$REPO" "$SKILL_DIR"
+  echo ""
+  echo "Done. Authenticate Pendo with /mcp, then run any skill:"
+  echo "  /pulse"
+  echo "  /launch-checklist"
+  echo "  /rice-score"
+fi
