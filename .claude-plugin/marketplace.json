@@ -1,0 +1,95 @@
+{
+  "name": "product-loop",
+  "owner": {
+    "name": "Pendo"
+  },
+  "description": "Claude skills for every stage of the product cycle, backed by live Pendo data. Install everything, or one bundle per stage.",
+  "plugins": [
+    {
+      "name": "product-loop",
+      "source": "./",
+      "description": "Every Product Loop skill",
+      "skills": [
+        "./pulse",
+        "./weekly-prio",
+        "./feedback-idea-producer",
+        "./field-qual-producer",
+        "./support-trends-producer",
+        "./engineering-progress-producer",
+        "./competitor-release-producer",
+        "./attention-radar",
+        "./daily-digest-conductor",
+        "./feature-validation",
+        "./product-manager-weekly-update",
+        "./product-lead-weekly-update",
+        "./funnel-dropoff-investigator",
+        "./friction-finder",
+        "./conviction-doc",
+        "./gtm-scoring",
+        "./prototype-fidelity",
+        "./feature-creation",
+        "./release-note-drafter",
+        "./product-announcement-generator",
+        "./release-kit",
+        "./launch-watch"
+      ]
+    },
+    {
+      "name": "product-loop-monitor",
+      "source": "./",
+      "description": "Monitor: keep a constant pulse on what's happening",
+      "skills": [
+        "./pulse",
+        "./weekly-prio",
+        "./feedback-idea-producer",
+        "./field-qual-producer",
+        "./support-trends-producer",
+        "./engineering-progress-producer",
+        "./competitor-release-producer",
+        "./attention-radar",
+        "./daily-digest-conductor",
+        "./feature-validation",
+        "./product-manager-weekly-update",
+        "./product-lead-weekly-update"
+      ]
+    },
+    {
+      "name": "product-loop-uncover",
+      "source": "./",
+      "description": "Uncover: find the real problems worth solving",
+      "skills": [
+        "./funnel-dropoff-investigator",
+        "./friction-finder"
+      ]
+    },
+    {
+      "name": "product-loop-validate",
+      "source": "./",
+      "description": "Validate: build confidence before you commit",
+      "skills": [
+        "./conviction-doc",
+        "./gtm-scoring",
+        "./prototype-fidelity"
+      ]
+    },
+    {
+      "name": "product-loop-launch",
+      "source": "./",
+      "description": "Launch: ship with confidence, nothing missed",
+      "skills": [
+        "./feature-creation",
+        "./release-note-drafter",
+        "./product-announcement-generator",
+        "./release-kit"
+      ]
+    },
+    {
+      "name": "product-loop-measure",
+      "source": "./",
+      "description": "Measure: know if it landed",
+      "skills": [
+        "./launch-watch"
+      ]
+    }
+  ]
+}

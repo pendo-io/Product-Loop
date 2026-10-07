@@ -1,3 +1,13 @@
+---
+name: pulse
+description: A quick read on how a product area is doing right now, with visitors, accounts, feedback, and frustration signals in one view and no dashboard required. Compares the last 7 days with the prior 7, clusters recent feedback into themes, surfaces rage clicks, errors, and u-turns, and ends with one thing to watch. Use Monday morning before planning or standup, for a quick check before a leadership conversation, or after a quiet period when you want to know what moved. Trigger on "/pulse" or "/pulse <product area>".
+license: MIT. LICENSE has complete terms
+compatibility: Needs the Pendo MCP connector for data (usage, feedback, tracked issues, session replays).
+metadata:
+  author: Pendo Product Operations
+  version: "1.0.0"
+---
+
 # pulse
 
 A quick read on how a product area is doing right now. Visitors, accounts, feedback, and frustration signals — all in one view, no dashboard required.
