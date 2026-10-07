@@ -1,0 +1,58 @@
+{
+  "_comment": "Example state.json: the run state, created on first saved run. Holds the pending Tier B/C queue (so a later resume can reload it) and the coverage log and counters that drive insights. Placeholder values only; dates are shown as <YYYY-MM-DD> and timestamps as <ISO 8601 timestamp>.",
+
+  "pending_resolution": {
+    "run_timestamp": "<ISO 8601 timestamp>",
+    "tier_b": [
+      {
+        "feature_url": "<feature record URL>",
+        "feature_name": "Recurring tasks",
+        "current_values": {
+          "Current phase": "Closed beta",
+          "Next phase": "Open beta",
+          "Next phase estimated target date": "<YYYY-MM-DD>",
+          "Uses AI?": "No",
+          "Regions available": ["Americas"],
+          "Early access details": "Invite-only, request access from the PM"
+        },
+        "uncorroborated_fields": ["Uses AI?"],
+        "evidence_summary": "Phase, next phase, target, regions and access details match the epic, the Quarterly plan, the Release checklist and the Beta program FAQ; the spec doc has no section on AI, so Uses AI? could not be confirmed."
+      }
+    ],
+    "tier_c": [
+      {
+        "feature_url": "<feature record URL>",
+        "feature_name": "Workload View",
+        "current_values": {
+          "Current phase": "Open beta",
+          "Uses AI?": "No"
+        },
+        "proposed_edits": {
+          "Uses AI?": { "from": "No", "to": "Yes", "rationale": "Spec doc approach section describes model-generated capacity suggestions", "source": "spec:<spec doc URL>" }
+        },
+        "evidence_summary": "Phase confirmed by the epic; the spec doc describes an AI-generated suggestion panel, which the record doesn't reflect."
+      }
+    ]
+  },
+
+  "coverage_counters": {
+    "Uses AI?": { "corroborated": 2, "uncorroborated": 6, "contradicted": 1, "features_seen": 9 },
+    "Current phase": { "corroborated": 10, "uncorroborated": 1, "contradicted": 0, "features_seen": 11 }
+  },
+
+  "coverage_log": [
+    {
+      "run": "<ISO 8601 timestamp>",
+      "feature_url": "<feature record URL>",
+      "feature_name": "Recurring tasks",
+      "field": "Uses AI?",
+      "outcome": "uncorroborated",
+      "source": null,
+      "tier": "B"
+    }
+  ],
+
+  "declined_insights": {
+    "Uses AI?::process_gap": { "declined_at": "<ISO 8601 timestamp>" }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "_comment": "Example of the feature_validation section of config.json, written by references/setup.md. Placeholder values only. Don't commit a real config (it holds user ids).",
+  "feature_validation": {
+    "version": "1.0.0",
+    "pm_user": {
+      "display_name": "<your name>",
+      "tracker_user": "<value your tracker's owner field stores for you>",
+      "slack_user_id": "<optional Slack user id>"
+    },
+
+    "feature_source": {
+      "type": "tracker",
+      "tracker": "notion",
+      "url": "<database / project / base URL>",
+      "_comment": "type: 'tracker' or 'pasted'. tracker: notion | jira | airtable | other."
+    },
+
+    "fields": {
+      "title": "Feature",
+      "owner": "Product Manager",
+      "current_phase": "Current phase",
+      "shipped_phase": "GA",
+      "due_flag": "Due for Validation",
+      "pre_change_flag": "Pre-change due",
+      "last_validated": "Last Validated",
+      "validated_by": "Validated by",
+      "validated_by_options": ["Agent", "User"],
+      "spec_link": "Spec link",
+      "milestones": "Milestones",
+      "roadmap_description": "Description for roadmap",
+      "show_on_roadmap": "Show on customer-facing roadmap?",
+      "_comment": "Map each role to your tracker's actual property name. Set a key to null if your tracker has no such property."
+    },
+
+    "high_signal_fields": [
+      "Current phase",
+      "Next phase",
+      "Next phase estimated target date",
+      "Uses AI?",
+      "Regions available",
+      "Early access details"
+    ],
+
+    "resolved_property_names": {
+      "_comment": "Filled at setup by reading the tracker schema: actual_name, type, options, write_form per property."
+    },
+
+    "due_rule": {
+      "mode": "tracker_flags",
+      "cadence_days": null,
+      "_comment": "mode: 'tracker_flags' (use due_flag / pre_change_flag), 'cadence' (Last Validated older than cadence_days, or next-phase target date today or tomorrow), or 'all' (every feature supplied is due). cadence_days: the PM's choice; setup suggests 7."
+    },
+
+    "output": {
+      "mode": "markdown",
+      "_comment": "'markdown' (report in chat, writes nothing) or 'tracker' (writes Last Validated, Validated by, agreed Tier C edits, and an audit comment)."
+    },
+
+    "sources": {
+      "slack_sources": [
+        { "type": "channel", "handle": "#team-channel", "name": "team-channel" }
+      ],
+      "doc_sources": [
+        { "type": "google_drive_file", "url": "<file URL>", "name": "Quarterly plan" },
+        { "type": "notion_page", "url": "<page URL>", "name": "Release checklist" },
+        { "type": "url", "url": "<page URL>", "name": "Beta program FAQ" }
+      ],
+      "jira": {
+        "project_keys": [],
+        "_comment": "Optional; narrows search. Empty means search accessible projects by feature name."
+      }
+    },
+
+    "field_source_map": {
+      "_comment": "Which sources corroborate each high-signal field, in priority order. 'spec' = the spec link on the feature; 'conviction' = the feature's linked conviction doc; 'milestones' = related milestone target dates; 'feature_body' = the record body and notes fields (context only, not external corroboration); 'pasted' = evidence the PM pasted this run; 'jira' = the feature's linked epic or issues in the tracker (narrowed by sources.jira.project_keys); 'slack' = the channels in sources.slack_sources; 'doc:<name>' = the doc_sources entry with that name.",
+      "Current phase": ["jira", "slack", "doc:Quarterly plan", "feature_body", "pasted"],
+      "Next phase": ["jira", "spec", "conviction", "doc:Quarterly plan", "pasted"],
+      "Next phase estimated target date": ["milestones", "jira", "doc:Quarterly plan", "pasted"],
+      "Uses AI?": ["spec", "conviction", "feature_body", "pasted"],
+      "Regions available": ["doc:Release checklist", "spec", "conviction", "slack", "pasted"],
+      "Early access details": ["doc:Beta program FAQ", "spec", "conviction", "slack", "pasted"]
+    },
+
+    "notify": {
+      "slack": false,
+      "mode": "always",
+      "slack_destination_user_id": null,
+      "_comment": "mode: 'always', 'only_if_tier_c', or 'never'. Never notifies on a nothing-due run."
+    },
+
+    "schedule": {
+      "frequency": "on_demand",
+      "time": null,
+      "timezone": null,
+      "_comment": "on_demand (default), or the frequency registered in your host (daily recommended). For reference only; the host owns the actual schedule."
+    },
+
+    "calibration": {
+      "enabled": true,
+      "done": false,
+      "_comment": "Tracker write-back only. When done=false, the first write-back run presents would-be Tier A validations for approval instead of writing them."
+    },
+
+    "coverage": {
+      "insight_threshold": 0.5,
+      "min_features": 4
+    },
+
+    "last_run": {
+      "iso_timestamp": null,
+      "status": null,
+      "counts": { "tier_a": 0, "tier_b": 0, "tier_c": 0, "due_total": 0 },
+      "_comment": "status: 'validated' | 'staged_for_review' | 'skipped_none_due' | 'calibration_pending' | 'failed_auth' | 'failed'."
+    }
+  }
+}
