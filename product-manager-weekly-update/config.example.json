@@ -1,0 +1,79 @@
+{
+  "_comment": "Example of the pm_weekly section of config.json. Setup (references/setup.md) writes it. Every value is a placeholder. Don't commit a real config to a shared repo.",
+  "pm_weekly": {
+    "version": "1.0.0",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z",
+    "user": {
+      "display_name": "Jordan Rivera",
+      "timezone": "America/Denver",
+      "tracker_user_id": null,
+      "slack_user_id": null
+    },
+    "audience": {
+      "name": "my manager"
+    },
+    "sources": {
+      "slack": [
+        { "type": "channel", "handle": "#team-channel", "id": "<channel id>" },
+        { "type": "dm", "handle": "@manager.handle", "user_id": "<user id>" }
+      ],
+      "docs": [
+        { "type": "confluence_page", "url": "<url>", "name": "Design decisions" },
+        { "type": "google_drive_file", "url": "<url>", "name": "Beta feedback tracker" }
+      ]
+    },
+    "features": {
+      "_comment": "source: tracker (auto_detect re-queries each run) or list (static names/links).",
+      "source": "list",
+      "tracker_url": null,
+      "owner_field": "Product Manager",
+      "auto_detect": false,
+      "list": [
+        { "name": "Recurring tasks", "url": null },
+        { "name": "Timesheet export", "url": null }
+      ]
+    },
+    "output": {
+      "_comment": "mode: markdown (default) or tracker. markdown_folder is optional; set it to share updates with product-lead-weekly-update.",
+      "mode": "markdown",
+      "markdown_folder": null,
+      "tracker": {
+        "target_url": null,
+        "data_source_id": null,
+        "title_property": null,
+        "features_property": null
+      }
+    },
+    "template": {
+      "_comment": "source: default, match_existing, or custom.",
+      "source": "default",
+      "reference": null,
+      "custom_notes": null
+    },
+    "schedule": {
+      "_comment": "Standalone only. Under the daily-digest-conductor the update day lives in the conductor's cadence (weekly-<day>) and this section is not used. If no day is set, the last working day of the week is the default.",
+      "enabled": false,
+      "day": "<your team's update day>",
+      "time": "<HH:MM>",
+      "timezone": "America/Denver"
+    },
+    "style": {
+      "_comment": "mode: match_prior, short_bullets, narrative, or hybrid. fallback_style applies when there are fewer than 2 prior updates.",
+      "mode": "match_prior",
+      "fallback_style": "hybrid",
+      "notes": null
+    },
+    "review_step": {
+      "_comment": "Tracker mode only. notify: chat (tell the user in chat), slack_dm (chat plus a Slack DM to user.slack_user_id), or none (enabled false). Setup Step 11 saves the value that matches the user's choice.",
+      "enabled": true,
+      "notify": "chat"
+    },
+    "last_run": {
+      "_comment": "status: delivered, published, failed, or skipped_empty_week.",
+      "iso_timestamp": null,
+      "status": null,
+      "output_location": null
+    }
+  }
+}
