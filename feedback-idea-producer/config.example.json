@@ -1,0 +1,21 @@
+{
+  "_comment": "Example config for feedback-idea-producer. Copy to config.json and fill in your own values. Don't commit a real config.json.",
+  "focus_areas": ["<Product area name>", "<Another product area>"],
+  "last_run": null,
+  "feedback_idea": {
+    "subscription_id": "<your Pendo subscription id>",
+    "window_days": 7,
+    "auto_link": false,
+    "standalone_digest": null,
+    "_standalone_digest_example": { "channel": "<channel name or id>", "cadence": "weekly-mon" },
+    "feature_tracker": null,
+    "_feature_tracker_example": { "type": "notion_database", "ref": "<database URL>" },
+    "idea_field": "<property on your feature records that stores the Listen idea link>",
+    "arr_field": "account.<your_crm_group>.<arr_field>",
+    "crm_account_id_field": "account.<your_crm_group>.<account_id_field>",
+    "new_idea_min_sources": 3,
+    "arr_concentration_threshold": 0.5,
+    "idea_url_pattern": "<your Pendo app URL>/s/{subscriptionId}/listen/validate?openItem={ideaId}",
+    "idea_index": {}
+  }
+}
