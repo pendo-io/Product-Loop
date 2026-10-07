@@ -1,0 +1,27 @@
+{
+  "role": "PM",
+  "focus_areas": ["<Your Product Area>"],
+  "support_trends": {
+    "area_map": {
+      "<Your Product Area>": {
+        "aliases": ["<other name support uses>"],
+        "tags": ["<area-tag>"],
+        "tag_prefixes": ["<area-tag-prefix>"],
+        "features": ["<Feature name>"]
+      }
+    },
+    "routing_rules": [],
+    "drop_if_no_organization": true,
+    "features_db": null,
+    "stage_only_areas": [],
+    "baseline_window_days": 7,
+    "thresholds": { "big_deal": 12, "mention": 5 },
+    "history_weeks": 8,
+    "area_tiers": { "mention_multiplier": 0.5, "big_deal_multiplier": 1.0, "mention_floor": 2, "big_deal_floor": 4 },
+    "area_history": { "refreshed_at": null, "refresh_days": 7, "source": null, "areas": {} },
+    "eng_wait_statuses": ["<your 'waiting on engineering' status>"],
+    "eng_wait_queue": [],
+    "sla_ref": null,
+    "ticket_url_template": null
+  }
+}

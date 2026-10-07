@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "purpose": "Example shape for support_trends.area_map and support_trends.routing_rules. Copy into your config and replace the placeholders with your own product areas. Not authoritative: the skill adds confirmed aliases over time.",
+    "how_matching_works": "A ticket matches an area when its tags match the area's tags or tag_prefixes, or its subject and human-authored comment match the area's names, aliases, or feature names. Tag plus text agreement = strong; one clear match = moderate; loose text only = weak."
+  },
+  "area_map": {
+    "Plan & Track": {
+      "aliases": ["Planner", "Project plans"],
+      "tags": ["plan-track"],
+      "tag_prefixes": ["plan-"],
+      "features": ["Milestones", "Workload View"]
+    },
+    "Calendar Sync": {
+      "aliases": ["Calendar integration", "Calendar connect"],
+      "tags": ["calendar-sync"],
+      "tag_prefixes": [],
+      "features": ["Two-way sync"]
+    }
+  },
+  "routing_rules": [
+    { "match_tag_prefix": "billing-", "action": "exclude", "reason": "invoice and plan questions, handled outside product support" },
+    { "match_tag_prefix": "calendar-sync", "action": "route", "to_area": "Calendar Sync", "reason": "tagged as a sync issue even when the ticket text talks about plans" }
+  ]
+}
