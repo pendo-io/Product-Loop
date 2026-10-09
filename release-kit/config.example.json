@@ -1,0 +1,47 @@
+{
+  "_comment": "Example of the release_kit section of config.json. Setup (references/setup.md) writes it. Every value is a placeholder. Any section left null falls back to the skill's neutral default. Don't commit a real config to a shared repo.",
+  "release_kit": {
+    "version": "1.0.0",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z",
+    "voice": {
+      "_comment": "source: skill, memory, pasted, linked, derived, or doc_store. source_skill names an installed voice or style skill (reference only, never its content). Saved only after the user confirms. null = default voice.",
+      "source": "pasted",
+      "source_skill": null,
+      "source_refs": ["<url or doc title>"],
+      "one_sentence": "<how your brand sounds>",
+      "we_are": ["<trait>", "<trait>", "<trait>"],
+      "we_are_not": ["<trait>", "<trait>", "<trait>"],
+      "readers": ["<persona>", "<persona>"],
+      "example_line": "<one line quoted from your own copy>",
+      "terms_to_avoid": [
+        { "avoid": "<term>", "use_instead": "<term>" }
+      ],
+      "confirmed_at": "2026-01-01T00:00:00Z"
+    },
+    "product_examples": [
+      { "name": "<Feature name>", "description": "<one line>", "source": "user" },
+      { "name": "<Feature name>", "description": "<one line>", "source": "<product page URL>" }
+    ],
+    "landing_page": {
+      "_comment": "Section order of one real product page. Stores structure only, not the page's copy. null = spec 6 as written.",
+      "source_url": "<product page URL>",
+      "sections": [
+        { "label": "Eyebrow", "notes": "2 to 4 words, all caps" },
+        { "label": "Hero headline", "notes": null },
+        { "label": "Capabilities", "notes": "3 blocks" },
+        { "label": "Customer quote", "notes": null },
+        { "label": "CTA", "notes": null }
+      ]
+    },
+    "tiers": [
+      {
+        "_comment": "maps_to is the closest default tier (1, 2, or 3). null for the whole list = the default three-tier menu.",
+        "name": "<Your tier name>",
+        "maps_to": 1,
+        "meaning": "<one line>",
+        "assets": ["<asset>", "<asset>"]
+      }
+    ]
+  }
+}
