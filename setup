@@ -1,20 +1,42 @@
 #!/usr/bin/env bash
+# Installs Product Loop as a Claude Code plugin from the pendo-io/Product-Loop marketplace.
+# Usage: ./setup [bundle]
+#   bundle: product-loop (everything, default), product-loop-monitor, product-loop-uncover,
+#           product-loop-validate, product-loop-launch, or product-loop-measure
 set -e
 
-SKILL_DIR="${HOME}/.claude/skills/product-loop"
-REPO="https://github.com/pendo-io/Product-Loop.git"
+MARKETPLACE_REPO="pendo-io/Product-Loop"
+MARKETPLACE="product-loop"
+BUNDLE="${1:-product-loop}"
 
-if [ -d "$SKILL_DIR" ]; then
-  echo "Product-Loop already installed. Updating..."
-  git -C "$SKILL_DIR" pull --ff-only
-  echo "Updated."
-else
-  echo "Installing Product-Loop..."
-  mkdir -p "$(dirname "$SKILL_DIR")"
-  git clone --depth 1 "$REPO" "$SKILL_DIR"
+print_steps() {
+  echo "In Claude Code, run:"
+  echo "  /plugin marketplace add ${MARKETPLACE_REPO}"
+  echo "  /plugin install ${BUNDLE}@${MARKETPLACE}"
   echo ""
-  echo "Done. Authenticate Pendo with /mcp, then run any skill:"
-  echo "  /pulse"
-  echo "  /launch-checklist"
-  echo "  /rice-score"
+  echo "In the Claude apps or Cowork: Customize > Plugins > Add marketplace, then enter ${MARKETPLACE_REPO}."
+}
+
+if ! command -v claude >/dev/null 2>&1; then
+  echo "The claude CLI isn't on your PATH, so this script can't install for you."
+  echo ""
+  print_steps
+  exit 1
 fi
+
+if claude plugin marketplace list --json 2>/dev/null | grep -q "\"name\": \"${MARKETPLACE}\""; then
+  echo "Updating the ${MARKETPLACE} marketplace..."
+  claude plugin marketplace update "${MARKETPLACE}"
+else
+  echo "Adding the ${MARKETPLACE} marketplace..."
+  claude plugin marketplace add "${MARKETPLACE_REPO}"
+fi
+
+echo "Installing ${BUNDLE}..."
+claude plugin install "${BUNDLE}@${MARKETPLACE}"
+
+echo ""
+echo "Done. Start a new Claude Code session, authenticate Pendo with /mcp, then run any skill:"
+echo "  /product-loop:pulse"
+echo "  /product-loop:conviction-doc"
+echo "  /product-loop:launch-watch"

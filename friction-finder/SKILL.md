@@ -12,6 +12,7 @@ description: >
   app frustrating users", or any request to scan an app for usability/bug friction. Make sure
   to use this skill whenever click-frustration or bug-feedback data would answer the
   question, even if the user doesn't use the words "friction" or "bug" explicitly.
+license: MIT. LICENSE has complete terms
 ---
 
 # Friction Finder

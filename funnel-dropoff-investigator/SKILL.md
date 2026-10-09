@@ -9,6 +9,7 @@ description: >
   "show me replays for drop-off", "what's causing low conversion", "pull replays for the worst step",
   or any request to understand a user flow or journey breakdown. Also trigger when someone shares
   a funnel name or page sequence and asks what's going wrong.
+license: MIT. LICENSE has complete terms
 ---
 
 # Funnel Drop-off Investigator
