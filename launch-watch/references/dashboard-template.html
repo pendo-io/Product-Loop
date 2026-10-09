@@ -1,0 +1,497 @@
+<!--
+  launch-watch dashboard - PINNED-SNAPSHOT-of-record with optional live refresh.
+  MODEL (see SKILL.md "Output" + "Sharing, refresh & archive"):
+   * On load it renders the baked SNAPSHOT ONLY - no connector call - so it opens identically for
+     you, a teammate, or a VP who has never touched Pendo. This is the shareable, citable record.
+   * "Generate new pinned snapshot" triggers the re-pin task when one is configured. Without one, it
+     falls back to a live pull, which works only when the surface rendering this page exposes a bridge
+     for calling connector tools (wired in HOST below) and the Pendo connector is present. It re-pulls
+     the numbers AND re-derives the analysis (HOST.ask), shown clearly as "local (unpinned)", not the
+     pinned snapshot. Re-running the skill is what re-pins (updates this artifact + archives the prior snapshot).
+   * If ANY live call fails (or the analysis cannot be re-derived), the page keeps the pinned snapshot
+     and its original "As of" date, shows "refresh failed: <which call>", and does not re-run the
+     analysis on partial data.
+   * With no bridge, the page is a static snapshot. That is the default and always works.
+   * A missing signal renders as a dash / "no signal yet" - never a fabricated number.
+   * The health banner is colored green / amber / red ONLY when the launch has targets (snapshot
+     `targets`, from CONFIG.launches[].targets). With no targets it renders neutral (level "none").
+   * Deep links to Pendo are built from CONFIG.subscriptionId + CONFIG.pendoHost. If either is unset,
+     links are simply omitted.
+   KEEP THIS FILE ASCII (entities / \u escapes) so a raw-file snapshot renders anywhere.
+-->
+<div id="lw-root">
+  <div class="lw-head">
+    <div>
+      <div class="lw-title" id="lw-name">{{FEATURE_NAME}}</div>
+      <div class="lw-sub">Launched <span id="lw-date">{{LAUNCH_DATE}}</span> &middot; Week <span id="lw-week">{{WEEK_N}}</span> since launch</div>
+    </div>
+    <div class="lw-asof">As of <b id="lw-asof">{{AS_OF}}</b><br><span id="lw-state" class="lw-state">pinned snapshot</span></div>
+  </div>
+
+  <div id="lw-tabs" class="lw-tabs"></div>
+
+  <div class="lw-bar-row">
+    <button class="lw-btn" id="lw-generate">&#8635; Generate new pinned snapshot</button>
+    <label class="lw-hint" for="lw-history" style="margin-left:4px">History</label>
+    <select id="lw-history" class="lw-select" title="View a past snapshot"></select>
+    <button class="lw-btn" id="lw-back" style="display:none">&#8592; Current pin</button>
+    <span class="lw-split">
+      <button class="lw-btn lw-btn-main" id="lw-export-pdf">&#8681; Export PDF</button>
+      <button class="lw-btn lw-btn-caret" id="lw-export-caret" title="Other formats">&#9662;</button>
+      <div class="lw-menu" id="lw-export-menu" hidden>
+        <div class="lw-menu-item" data-fmt="pdf">PDF</div>
+        <div class="lw-menu-item" data-fmt="html">HTML</div>
+        <div class="lw-menu-item" data-fmt="png">PNG</div>
+      </div>
+    </span>
+    <span class="lw-hint" id="lw-hint">Pinned snapshot, shareable with your team. It includes customer quotes, so check it before sharing outside your team. Export a frozen copy for leadership; the live link is in this artifact's own toolbar.</span>
+  </div>
+
+  <div id="lw-refresh-note" class="lw-refresh-fail" hidden></div>
+  <div id="lw-banner" class="lw-banner lw-none"><span class="lw-dot"></span><span id="lw-banner-text">&mdash;</span></div>
+  <div class="lw-targets" id="lw-targets"></div>
+  <div class="lw-read" id="lw-read-panel"><h3>The read</h3><p id="lw-read"></p></div>
+  <div id="lw-cards" class="lw-cards"></div>
+
+  <div class="lw-grid">
+    <section class="lw-panel"><h3>Adoption since launch</h3><div id="lw-adoption"></div><div class="lw-caption" id="lw-adopt-cap"></div></section>
+    <section class="lw-panel" id="lw-funnel-panel"><h3>Activation funnel</h3><div id="lw-funnel"></div></section>
+  </div>
+
+  <section class="lw-panel" id="lw-guide-panel"><h3>Guide engagement</h3><div id="lw-guides"></div></section>
+  <section class="lw-panel" id="lw-friction-panel"><h3>Friction</h3><div id="lw-friction"></div></section>
+  <section class="lw-panel" id="lw-sentiment-panel"><h3>Sentiment &amp; feedback</h3><div id="lw-themes"></div><div id="lw-sentiment"></div></section>
+
+  <div class="lw-foot">Data from Pendo &middot; a missing signal shows as &ldquo;no signal yet,&rdquo; never an invented number.</div>
+</div>
+
+<style>
+  :root{--pink:#FF4876;--berry:#2A2359;--ink:#1A1A2E;--muted:#6B7280;--bg:#F6F7FB;--card:#FFFFFF;--line:#E9EAF2;--green:#1FB57A;--amber:#F5A623;--red:#E5484D;--blue:#274690;--shadow:0 1px 2px rgba(26,26,46,.06),0 4px 16px rgba(26,26,46,.06);--radius:14px;--font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+  #lw-root{font-family:var(--font);color:var(--ink);background:var(--bg);padding:20px;max-width:1080px;margin:0 auto;}
+  .lw-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:12px;}
+  .lw-title{font-size:22px;font-weight:700;letter-spacing:-.01em;}
+  .lw-sub{color:var(--muted);font-size:13px;margin-top:2px;}
+  .lw-asof{color:var(--muted);font-size:12px;text-align:right;white-space:nowrap;}
+  .lw-state{font-size:11px;}
+  .lw-state.live{color:var(--blue);font-weight:700;}
+  .lw-bar-row{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .lw-btn{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--berry);border-radius:8px;padding:6px 12px;cursor:pointer;box-shadow:var(--shadow);}
+  .lw-btn:hover{border-color:var(--pink);color:var(--pink);}
+  .lw-hint{font-size:12px;color:var(--muted);}
+  .lw-select{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--berry);border-radius:8px;padding:6px 10px;box-shadow:var(--shadow);cursor:pointer;max-width:240px;}
+  .lw-split{position:relative;display:inline-flex;}
+  .lw-btn-main{border-top-right-radius:0;border-bottom-right-radius:0;}
+  .lw-btn-caret{border-top-left-radius:0;border-bottom-left-radius:0;border-left:none;padding:6px 8px;}
+  .lw-menu{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);z-index:20;min-width:110px;overflow:hidden;}
+  .lw-menu[hidden]{display:none;}
+  .lw-menu-item{padding:7px 12px;font-size:13px;font-weight:600;color:var(--berry);cursor:pointer;}
+  .lw-menu-item:hover{background:#F6F7FB;color:var(--pink);}
+  @media print{ .lw-bar-row,.lw-tabs,.lw-refreshed{display:none!important;} #lw-root{padding:0;max-width:none;background:#fff;} .lw-panel,.lw-card,.lw-read,.lw-banner{box-shadow:none;} }
+  .lw-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+  .lw-tab{padding:6px 12px;border-radius:999px;background:#EFEFF6;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;}
+  .lw-tab.active{background:#fff;color:var(--berry);border-color:var(--line);box-shadow:var(--shadow);}
+  .lw-banner{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:var(--radius);font-weight:600;font-size:15px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .lw-banner .lw-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+  .lw-green{background:#E7F8F1;color:#0C6B4C;}.lw-green .lw-dot{background:var(--green);}
+  .lw-amber{background:#FEF4E1;color:#8A5A00;}.lw-amber .lw-dot{background:var(--amber);}
+  .lw-red{background:#FDECEC;color:#A11D22;}.lw-red .lw-dot{background:var(--red);}
+  .lw-none{background:#fff;color:var(--ink);border:1px solid var(--line);}.lw-none .lw-dot{background:var(--muted);}
+  .lw-banner.has-targets{margin-bottom:6px;}
+  .lw-targets{font-size:12px;color:var(--muted);margin:0 0 14px 4px;}
+  .lw-refresh-fail{background:#FDECEC;color:#A11D22;border:1px solid #F3B8BA;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:12px;}
+  .lw-refresh-fail[hidden]{display:none;}
+  .lw-livebar{background:#EAF0FF;color:var(--blue);border:1px dashed #9DB2E8;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:12px;}
+  .lw-read{background:#fff;border:1px solid var(--line);border-left:4px solid var(--pink);border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow);margin-bottom:18px;}
+  .lw-read h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:.04em;}
+  .lw-read p{font-size:14px;line-height:1.55;margin:0;}
+  .lw-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:18px;}
+  .lw-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+  .lw-card .lbl{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  .lw-card .val{font-size:24px;font-weight:700;margin-top:6px;color:var(--berry);}
+  .lw-card.primary .val{color:var(--pink);}
+  .lw-card .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .lw-card .delta{font-size:12px;font-weight:600;margin-top:4px;}
+  .lw-up{color:var(--green);}.lw-down{color:var(--red);}.lw-flat{color:var(--muted);}
+  .lw-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .lw-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px;}
+  .lw-panel h3{margin:0 0 12px;font-size:14px;font-weight:700;color:var(--berry);}
+  .lw-caption{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.5;}
+  .lw-caveat{font-size:12px;color:#8A5A00;background:#FEF4E1;border-radius:8px;padding:6px 10px;margin-top:10px;display:inline-block;}
+  .lw-funnel-step{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;}
+  .lw-bar{height:8px;border-radius:4px;background:var(--pink);margin:2px 0 8px;}
+  .lw-th,.lw-guide,.lw-fr{display:grid;grid-template-columns:1.5fr .9fr .9fr .9fr .9fr;gap:8px;align-items:center;font-size:13px;}
+  .lw-th-fr,.lw-fr{grid-template-columns:1.5fr .8fr .8fr .8fr .8fr .8fr;}
+  .lw-th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .lw-guide,.lw-fr{padding:9px 0;border-bottom:1px solid var(--line);}
+  .lw-guide .gname,.lw-fr .fname{font-weight:600;}
+  .lw-sub2{color:var(--muted);font-size:12px;margin-top:3px;grid-column:1/-1;}
+  .lw-pill{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;background:#EFEFF6;color:var(--muted);margin-left:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.03em;}
+  .lw-pill.warn{background:#FEF4E1;color:#8A5A00;}
+  .lw-note{font-size:13px;background:#F6F7FB;border-radius:8px;padding:8px 10px;margin-top:10px;}
+  .lw-fb{font-size:13px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .lw-fb .src{font-size:11px;color:var(--muted);background:#EFEFF6;border-radius:6px;padding:1px 6px;margin-left:6px;}
+  .lw-link{color:inherit;text-decoration:none;border-bottom:1px dashed var(--line);} .lw-link:hover{color:var(--pink);border-bottom-color:var(--pink);}
+  .lw-ext{color:var(--muted);font-size:9px;}
+  .lw-src-link{color:var(--muted);font-size:11px;text-decoration:none;margin-left:4px;} .lw-src-link:hover{color:var(--pink);}
+  .lw-theme{font-size:13px;padding:7px 0;border-bottom:1px solid var(--line);line-height:1.45;}
+  .lw-theme b{color:var(--berry);} .lw-theme .cnt{color:var(--pink);font-weight:700;}
+  .lw-sublabel{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin:2px 0 6px;}
+  .lw-empty{color:var(--muted);font-size:13px;font-style:italic;}
+  .lw-foot{color:var(--muted);font-size:11px;text-align:center;margin-top:16px;}
+  @media(max-width:720px){.lw-grid{grid-template-columns:1fr;}.lw-th,.lw-guide,.lw-fr,.lw-th-fr{grid-template-columns:1.3fr .9fr .9fr;}.lw-th span:nth-child(n+4),.lw-guide span:nth-child(n+4),.lw-fr span:nth-child(n+4){display:none;}}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+// CONFIG: fill from Step 1 and setup. subscriptionId = the Pendo subscription the data belongs to;
+// pendoHost = the host you sign in to Pendo on (region-specific), without https://; mcpPrefix = the
+// tool-name prefix your surface uses for the Pendo connector (for example "mcp__<server>__"), or "".
+// rateUnit = the unit guideUsage states for completionRate/dismissalRate, read from the tool's response
+// or schema: "percent" (8 means 8%), "fraction" (0.08 means 8%), or "" if neither states it.
+const CONFIG = { subscriptionId:"{{SUBSCRIPTION_ID}}", pendoHost:"{{PENDO_HOST}}", mcpPrefix:"{{PENDO_MCP_PREFIX}}", feedbackAreaId:"{{FEEDBACK_AREA_ID}}", appId:"{{APP_ID}}", launchDate:"{{LAUNCH_DATE_ISO}}", repinTaskId:"{{REPIN_TASK_ID}}", rateUnit:"{{RATE_UNIT}}", segmentId:null, window:{current:7,prior:7},
+  launches:[ { key:"l1", name:"{{FEATURE_NAME}}", entities:[ /* {type,id,name} */ ],
+    targets:[ /* {metric:"New accounts per week", target:"20 by week 4"} - from setup; leave empty if the user has none */ ] } ] };
+
+// ---- PINNED SNAPSHOT (frozen record). DEMO DATA ONLY: an invented "Calendar Sync" launch in a
+// fictional work-tracking app, so the page renders on first open. Replace it with THIS run's data.
+// In real data, asOf and launchDate are ISO dates (YYYY-MM-DD); the demo uses plain labels. ----
+const SNAPSHOT = {
+  asOf:"demo week 6",
+  l1:{
+    name:"Example: Calendar Sync (GA)", launchDate:"(demo launch)", weekN:6,
+    targets:[ {metric:"New accounts per week", target:"30 by week 6"}, {metric:"Connect to first sync", target:"60%"} ],
+    read:{ level:"green",
+      verdict:"Landing well: adoption stepped up after the setup walkthrough and both targets are met, with one friction spot on reconnecting.",
+      narrative:"Calendar Sync is landing well after a slow start. New accounts stayed near ten a week until the setup walkthrough went live in week 4, then climbed to 34 in the latest week, so the 30-a-week target is met. Connect to first sync is 64%, above the 60% target, and the biggest drop is at the access-grant step rather than the sync itself. The thing to watch is reconnecting: rage clicks on the settings page roughly doubled in two weeks and the top feedback theme is a reconnect loop, and most of those clicks follow an error message, so this looks like a reconnect failure to raise with engineering rather than user impatience. The new help tooltip there is too young to judge." },
+    cards:[
+      {label:"Accounts adopted", value:"111", sub:"since launch", primary:true},
+      {label:"Latest week", value:"34", prev:"27", goodUp:true, sub:"new accts (latest week)"},
+      {label:"Connect to first sync", value:"64%", sub:"212 of 331 synced"},
+      {label:"Guide completion", value:"38.2%", sub:"setup walkthrough"},
+      {label:"Friction hotspot", value:"Settings pg", sub:"146 rage clicks"}
+    ],
+    adoption:{ weeks:["Wk 1","Wk 2","Wk 3","Wk 4","Wk 5","Wk 6"], newAccounts:[6,9,11,24,27,34],
+      caption:"Slow for three weeks (under a dozen a week), then a step up once the setup walkthrough went live in week 4. Still climbing at week 6." },
+    guides:[
+      {name:"Calendar Sync setup walkthrough", status:"Active", views:"1,240", visitors:"910", completion:"38.2%", dismissal:"14.5%", read:"Went live in week 4; the step up in new accounts lines up with it."},
+      {name:"Reconnect help tooltip", status:"New this week", views:"85", visitors:"70", completion:"-", dismissal:"22.4%", read:"Added on the settings page after the reconnect complaints. Too early to read."}
+    ],
+    funnel:{ steps:[{step:'Opened "Connect calendar"', n:331},{step:'Granted calendar access', n:268},{step:'First sync completed', n:212}], conversion:"64%",
+      caveat:"" },
+    friction:{ surfaces:[
+        {name:"Calendar settings page", visitors:"1,020", dead:"~9%", rage:"146", uturns:"88", dwell:"2.1 min", note:"Most rage clicks land on Reconnect, right after an error message, so it reads as a failing reconnect rather than impatience."},
+        {name:"Workload View (synced events)", visitors:"2,480", dead:"~3%", rage:"21", uturns:"40", dwell:"6.4 min", note:""}
+      ],
+      summary:"Synced events read cleanly in Workload View; the friction is in reconnecting a calendar, not in using the synced one." },
+    themes:[
+      {name:"Reconnect loop", description:"People asked to reconnect their calendar more than once in a week.", count:6},
+      {name:"Sync delay", description:"Requests for edits to show up in Workload View sooner.", count:3}
+    ],
+    sentiment:[
+      {text:'"Seeing my meetings next to my tasks is exactly what I wanted" [5/5]', source:"in-app poll", url:""},
+      {text:"Reconnect prompt keeps coming back: I had to reconnect my calendar three times this week before the sync stuck.", source:"feedback", url:""}
+    ]
+  }
+};
+
+// ---- HISTORY: prior pinned snapshots (agent appends one here on every re-pin) --
+// Each entry is a full snapshot for one "As of" date. DEMO DATA ONLY (the invented week before).
+const HISTORY = [
+  { asOf:"demo week 5", l1:{
+    name:"Example: Calendar Sync (GA)", launchDate:"(demo launch)", weekN:5,
+    targets:[ {metric:"New accounts per week", target:"30 by week 6"}, {metric:"Connect to first sync", target:"60%"} ],
+    read:{ level:"amber", verdict:"Picking up after the walkthrough but still under the weekly adoption target; conversion is on target.",
+      narrative:"The setup walkthrough is working: new accounts more than doubled once it went live and held up in week 5, but 27 is still short of the 30-a-week target. Connect to first sync is 61%, just over target. Reconnect rage clicks are starting to show on the settings page; worth watching next week." },
+    cards:[ {label:"Accounts adopted", value:"77", sub:"since launch", primary:true},
+      {label:"Latest week", value:"27", prev:"24", goodUp:true, sub:"new accts (latest week)"},
+      {label:"Connect to first sync", value:"61%", sub:"171 of 280 synced"},
+      {label:"Guide completion", value:"35.0%", sub:"setup walkthrough"},
+      {label:"Friction hotspot", value:"Settings pg", sub:"92 rage clicks"} ],
+    adoption:{ weeks:["Wk 1","Wk 2","Wk 3","Wk 4","Wk 5"], newAccounts:[6,9,11,24,27],
+      caption:"Flat for three weeks, then a step up with the week 4 walkthrough. Two weeks of the new level so far." },
+    guides:[ {name:"Calendar Sync setup walkthrough", status:"Active", views:"690", visitors:"520", completion:"35.0%", dismissal:"16.2%", read:"Driving most new setups since it went live."} ],
+    funnel:{ steps:[{step:'Opened "Connect calendar"', n:280},{step:'Granted calendar access', n:226},{step:'First sync completed', n:171}], conversion:"61%", caveat:"" },
+    friction:{ surfaces:[ {name:"Calendar settings page", visitors:"760", dead:"~7%", rage:"92", uturns:"61", dwell:"2.3 min", note:"Rage clicks cluster on Reconnect."},
+      {name:"Workload View (synced events)", visitors:"1,830", dead:"~3%", rage:"17", uturns:"32", dwell:"6.1 min", note:""} ],
+      summary:"Using synced events is smooth; reconnecting is where friction is starting." },
+    themes:[ {name:"Reconnect loop", description:"People asked to reconnect their calendar more than once.", count:4} ],
+    sentiment:[] } }
+];
+
+// ---- LIVE REFRESH: re-pull numbers + RE-DERIVE the analysis via HOST.ask -----
+// ---- HOST BRIDGE: map your surface's artifact runtime here --------------------
+// Some surfaces that render HTML artifacts let the page call connector tools, ask Claude, or run a
+// scheduled task. Map those functions here. Leave any you don't have as null; the page degrades to
+// the pinned snapshot. One known bridge is detected below as an example (window.cowork, the page runtime in Claude's
+// Cowork surface); add others the same way.
+const HOST = (function(){
+  const b = (typeof window!=="undefined" && window.cowork) ? window.cowork : null;
+  return {
+    callTool: b && b.callMcpTool ? (n,a)=>b.callMcpTool(n,a) : null,
+    ask:      b && b.askClaude   ? (p,d)=>b.askClaude(p,d)   : null,
+    runTask:  b && b.runScheduledTask ? (id)=>b.runScheduledTask(id) : null
+  };
+})();
+function isSet(v){ return !!v && String(v).indexOf("{{")<0; }
+// Guide rates: the unit comes from CONFIG.rateUnit (read from the tool response or schema), never
+// from the size of the value. If the unit is unset, show the raw number labeled "unit unclear".
+function ratePct(r){ const n=Number(r); if(!isFinite(n)) return "-"; const u=isSet(CONFIG.rateUnit)?String(CONFIG.rateUnit).toLowerCase():"";
+  if(u==="percent") return (Math.round(n*10)/10)+"%";
+  if(u==="fraction") return (Math.round(n*1000)/10)+"%";
+  return n+" (unit unclear)"; }
+function P(n){ return (isSet(CONFIG.mcpPrefix)?CONFIG.mcpPrefix:"")+n; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+async function mcp(name,args){ const r=await HOST.callTool(P(name),args); if(r.isError) throw new Error(name); return r.structuredContent ?? JSON.parse(r.content[0].text); }
+async function reanalyze(numbers, launchName){
+  if(!HOST.ask) return null;
+  const prompt = 'You are the launch-watch analyst. From these Pendo metrics for the launch "'+launchName+'", '
+    + 'return ONLY JSON: {level, verdict, narrative, adoptionCaption, guideReads:{name:read}, frictionNotes:{name:note}}. '
+    + 'level is green|amber|red judged ONLY against numbers.targets; if targets is empty, level is "none". verdict <=1 sentence. narrative 2-4 sentences that CATCH whether it looks adopted but is in trouble '
+    + '(guide views without completion, a funnel step most people stop at, frustration rising per visitor, a guide that stopped showing, usage concentrated in a few accounts). '
+    + 'Base every claim on the numbers; if a signal is missing say so; never invent numbers.';
+  try{ const r=await HOST.ask(prompt,[numbers]); const txt=typeof r==="string"?r:(r.text||r.content||JSON.stringify(r)); return JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}")+1)); }
+  catch(e){ return null; }
+}
+// Call-sourced feedback check. A call item is kept only when it carries a usable quote:
+// at least CALL_MIN_WORDS words once the opening pleasantry is removed. The opening pleasantry is
+// every clause before the first one that names this launch (a term from its name, entity names,
+// or theme names). No fixed greeting list: an item that never gets to the launch is all opener.
+const CALL_MIN_WORDS=8;
+function isCallSource(src){ return /call|meeting|transcript|recording|gong|chorus|zoom/i.test(src); }
+function wordsOf(t){ return String(t||"").toLowerCase().match(/[a-z0-9']+/g)||[]; }
+function launchTerms(L, base){
+  const t=new Set(), add=(x)=>wordsOf(x).forEach(w=>{ if(w.length>=4) t.add(w); });
+  add(L.name); add(base&&base.name); (L.entities||[]).forEach(e=>add(e.name)); ((base&&base.themes)||[]).forEach(x=>add(x.name));
+  return t;
+}
+function callHasQuote(text, terms){
+  const clauses=String(text||"").split(/[.,;:!?\u2013\u2014]+|\s-\s/).map(c=>wordsOf(c)).filter(c=>c.length);
+  let j=0; while(j<clauses.length&&!clauses[j].some(w=>terms.has(w))) j++;
+  const rest=[].concat(...clauses.slice(j));
+  return rest.length>=CALL_MIN_WORDS;
+}
+// Returns {ok:true, data} only when every live call succeeded and the analysis was re-derived.
+// On ANY failed call it returns {ok:false, failed:[...]} without re-running the analysis, so the
+// caller keeps the pinned snapshot and its original "As of" date rather than mixing old and new.
+async function fetchLive(){
+  if(!HOST.callTool) return { ok:false, failed:["no connector bridge (HOST.callTool)"] };
+  const dr={type:"absolute",startDate:CONFIG.launchDate,endDate:todayISO()};
+  const out={ asOf: todayISO() };
+  const failed=[]; const fail=(call)=>{ failed.push(call); };
+  for(const L of CONFIG.launches){
+    const base=JSON.parse(JSON.stringify(SNAPSHOT[L.key]));
+    if(Array.isArray(L.targets)&&L.targets.length) base.targets=L.targets;
+    // usage = page, feature, and trackEvent entities; each is queried with its OWN type
+    // (acquisitionTrend scope / entityUsage entityType both accept "trackEvent"). Guides take the
+    // guideUsage path below. Adoption uses the first usage entity (a page-, feature-, or
+    // track-event-only launch all work).
+    const ents=L.entities||[], usage=ents.filter(e=>e.type==="page"||e.type==="feature"||e.type==="trackEvent"), guides=ents.filter(e=>e.type==="guide");
+    const primary=usage[0]||null, primaryUrl=primary?pUrl(primary.type,primary.id):"";
+    let adoptTotal=null,lastWk=null,prevWk=null;
+    try{ if(primary){
+      // subId is the Pendo tool's parameter name; CONFIG.subscriptionId is the config key.
+      const a=await mcp("acquisitionTrend",{subId:CONFIG.subscriptionId,appId:CONFIG.appId,scope:primary.type,entityId:primary.id,unit:"account",periodType:"week",periodCount:8,userQuery:"launch-watch adoption"});
+      const acq=a.acquisition||[];
+      base.adoption={ weeks:acq.map(c=>String(c.cohortLabel||"").split(" - ")[0]), newAccounts:acq.map(c=>c.newCount), caption:(base.adoption&&base.adoption.caption)||"", url:primaryUrl, urlKind:primary.type };
+      adoptTotal=a.summary&&a.summary.totalNew; lastWk=acq.length?acq[acq.length-1].newCount:null; prevWk=acq.length>1?acq[acq.length-2].newCount:null;
+    }}catch(e){ fail("acquisitionTrend ("+(primary&&primary.name||"adoption")+")"); }
+    try{ const gg=[];
+      for(const g of guides){ try{
+        const u=await mcp("guideUsage",{subId:CONFIG.subscriptionId,guideId:g.id,dateRange:dr,limit:1,userQuery:"launch-watch guide"});
+        const s=u.summary||{}, baked=(base.guides||[]).find(x=>x.name===g.name)||{};
+        gg.push({ name:g.name, url:pUrl("guide",g.id), status:baked.status||"", views:(s.totalViews!=null?s.totalViews.toLocaleString():"-"), visitors:(s.uniqueVisitors!=null?s.uniqueVisitors.toLocaleString():"-"), completion:(s.completionRate!=null?ratePct(s.completionRate):"-"), dismissal:(s.dismissalRate!=null?ratePct(s.dismissalRate):"-"), read:baked.read||"" });
+      }catch(e){ fail("guideUsage ("+g.name+")"); } }
+      if(gg.length) base.guides=gg;
+    }catch(e){ fail("guideUsage"); }
+    try{ const ss=[];
+      for(const en of usage){ try{
+        const u=await mcp("entityUsage",{subId:CONFIG.subscriptionId,entityType:en.type,entityId:en.id,dateRange:dr,limit:1,userQuery:"launch-watch friction"});
+        const s=u.summary||{}, ev=s.totalNumEvents||0, baked=((base.friction&&base.friction.surfaces)||[]).find(x=>x.name===en.name)||{};
+        // dwell (avg time) is not in this summary, so live rows show "-"; u-turns apply to pages only;
+        // track events carry no frustration counts, so their dead and rage cells show "-".
+        ss.push({ name:en.name, url:pUrl(en.type,en.id), visitors:(s.totalNumVisitors!=null?s.totalNumVisitors.toLocaleString():"-"), dead:(ev&&s.totalDeadClickCount!=null?("~"+Math.round(s.totalDeadClickCount/ev*100)+"%"):"-"), rage:(s.totalRageClickCount!=null?s.totalRageClickCount.toLocaleString():"-"), uturns:(en.type==="page"&&s.totalUTurnCount!=null?s.totalUTurnCount.toLocaleString():"-"), dwell:"-", note:baked.note||"" });
+      }catch(e){ fail("entityUsage ("+en.name+")"); } }
+      if(ss.length) base.friction={ surfaces:ss, summary:(base.friction&&base.friction.summary)||"" };
+    }catch(e){ fail("entityUsage"); }
+    // sentiment: themes (the "why") + curated verbatims; drop call-pointer noise
+    const fbFilter={ startDate:CONFIG.launchDate, endDate:todayISO() };
+    if(isSet(CONFIG.feedbackAreaId)) fbFilter.productAreaIds=[CONFIG.feedbackAreaId]; else fbFilter.similaritySearchTerms=[base.name||L.name];
+    try{ const tp=await mcp("generateFeedbackTopics",{subId:CONFIG.subscriptionId,filters:fbFilter,userQuery:"launch-watch themes"});
+      const arr=Array.isArray(tp)?tp:(tp.topics||tp.data||[]);
+      const th=arr.slice(0,5).map(x=>({name:x.topicName||x.name||"", description:x.topicDescription||x.description||"", count:(x.vocInsightCount!=null?x.vocInsightCount:(x.count!=null?x.count:""))}));
+      if(th.length) base.themes=th;
+    }catch(e){ fail("generateFeedbackTopics"); }
+    try{ const fb=await mcp("getFeedbackItems",{subId:CONFIG.subscriptionId,filters:fbFilter,userQuery:"launch-watch feedback"});
+      const useful=(fb.data||[]).filter(it=>{ const src=String(it.source||""), dd=String(it.description||"").trim();
+        if(src==="PollResponse") return true;
+        if(/^[0-9a-f-]{20,}$/.test(src)) return false;
+        if(isCallSource(src)) return callHasQuote(dd, launchTerms(L, base));
+        return dd.length>60; }).slice(0,6).map(it=>{
+        const acct=it.account&&it.account.name?(" - "+it.account.name):"";
+        if(it.source==="PollResponse"){ const r=/^[1-5]$/.test(String(it.description).trim())?(" ["+String(it.description).trim()+"/5]"):""; return {text:'"'+String(it.title||"").replace(/\s+/g," ")+'"'+r+acct, source:"in-app poll", url:pUrl("feedback",it.id)}; }
+        return {text:String(it.title||"").replace(/\s+/g," ")+": "+String(it.description).replace(/\s+/g," ").slice(0,170)+acct, source:(String(it.source).length>20?"call/ticket":(it.source||"feedback")), url:pUrl("feedback",it.id)}; });
+      if(useful.length) base.sentiment=useful;
+    }catch(e){ fail("getFeedbackItems"); }
+    // Any failed call: stop here. Don't compute cards or re-run the analysis on partial data.
+    if(failed.length) return { ok:false, failed:failed };
+    try{
+      const cards=[ {label:"Accounts reached", value:(adoptTotal!=null?adoptTotal.toLocaleString():"-"), sub:"since launch", primary:true, url:primaryUrl},
+        {label:"New accts, latest wk", value:(lastWk!=null?String(lastWk):"-"), prev:(prevWk!=null?String(prevWk):null), goodUp:true, sub:"latest week", url:primaryUrl} ];
+      if(base.guides&&base.guides[0]) cards.push({label:"Top guide completion", value:base.guides[0].completion, sub:(base.guides[0].views||"")+" views", url:base.guides[0].url});
+      if(base.friction&&base.friction.surfaces&&base.friction.surfaces.length){ const worst=base.friction.surfaces.slice().sort((a,b)=>(parseFloat(b.dead)||0)-(parseFloat(a.dead)||0))[0]; if(worst) cards.push({label:"Friction hotspot", value:worst.name, sub:worst.dead+" dead clicks", url:worst.url}); }
+      base.cards=cards;
+    }catch(e){}
+    // The read must be re-derived over the new numbers; an old read under a new date is a failure.
+    let a=null;
+    try{ a=await reanalyze({targets:base.targets||[],cards:base.cards,adoption:base.adoption,guides:base.guides,funnel:base.funnel,friction:base.friction}, base.name||L.name); }catch(e){ a=null; }
+    if(!a) return { ok:false, failed:[HOST.ask?"analysis (HOST.ask)":"analysis (no HOST.ask on this surface)"] };
+    base.read={level:a.level,verdict:a.verdict,narrative:a.narrative};
+    if(a.adoptionCaption&&base.adoption) base.adoption.caption=a.adoptionCaption;
+    (base.guides||[]).forEach(g=>{ if(a.guideReads&&a.guideReads[g.name]) g.read=a.guideReads[g.name]; });
+    ((base.friction&&base.friction.surfaces)||[]).forEach(s=>{ if(a.frictionNotes&&a.frictionNotes[s.name]) s.note=a.frictionNotes[s.name]; });
+    out[L.key]=base;
+  }
+  return { ok:true, data:out };
+}
+
+// ---- helpers ---------------------------------------------------------------
+function esc(s){ return String(s==null?"":s).replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])); }
+function pHost(){ return isSet(CONFIG.pendoHost) ? String(CONFIG.pendoHost).replace(/^https?:\/\//,"").replace(/\/+$/,"") : ""; }
+function pUrl(kind,id){ if(!id || !pHost() || !isSet(CONFIG.subscriptionId)) return ""; var base="https://"+pHost()+"/s/"+CONFIG.subscriptionId; if(kind==="feedback") return base+"/listen/validate?openItem="+id; var m={guide:"/guides/",page:"/pages/",feature:"/features/",object:"/objects/",trackEvent:"/trackevents/"}; return base+(m[kind]||"/pages/")+id; }
+function kindLabel(k){ return ({page:"page",feature:"feature",guide:"guide",trackEvent:"track event",object:"object"})[k]||"source"; }
+function lnk(url,label){ return url?('<a class="lw-link" href="'+esc(url)+'" target="_blank" rel="noopener">'+label+' <span class="lw-ext">&#8599;</span></a>'):label; }
+function hasTargets(d){ return !!d && Array.isArray(d.targets) && d.targets.length>0; }
+// Status color only when the launch has targets; otherwise (or on an unknown level) neutral.
+function levelOf(d){ const lv=d&&d.read&&d.read.level; return (hasTargets(d) && ["green","amber","red"].indexOf(lv)>=0) ? lv : "none"; }
+function toNum(v){ if(v==null) return null; const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?null:n; }
+function deltaHtml(c){ if(c.prev==null||c.prev==="") return ""; const a=toNum(c.value),b=toNum(c.prev); let dir="flat"; if(a!=null&&b!=null) dir=a>b?"up":a<b?"down":"flat"; const good=dir==="flat"?"lw-flat":((dir==="up")===!!c.goodUp?"lw-up":"lw-down"); const ar=dir==="up"?"&#9650;":dir==="down"?"&#9660;":"&#9644;"; return `<div class="delta ${good}">${ar} vs ${esc(c.prev)} prior</div>`; }
+
+let CHART;
+function drawAdoption(d){
+  const host=document.getElementById("lw-adoption");
+  const wk=(d.adoption&&d.adoption.weeks)||[], ys=(d.adoption&&d.adoption.newAccounts)||[];
+  document.getElementById("lw-adopt-cap").innerHTML=esc((d.adoption&&d.adoption.caption)||"")+((d.adoption&&d.adoption.url)?(" "+lnk(d.adoption.url,"View "+kindLabel(d.adoption.urlKind)+" in Pendo")):"");
+  if(!ys.length){ host.innerHTML='<div class="lw-empty">No adoption data yet.</div>'; return; }
+  if(typeof Chart!=="undefined"){ try{ host.innerHTML='<canvas height="150"></canvas>'; if(CHART) CHART.destroy();
+      CHART=new Chart(host.firstChild,{type:"bar",data:{labels:wk,datasets:[{data:ys,backgroundColor:"rgba(255,72,118,.85)",borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:"#EEE"}},x:{grid:{display:false}}}}}); return;
+  }catch(e){} }
+  const W=460,H=150,P=24,max=Math.max(...ys,1);
+  const bars=ys.map((y,i)=>{const x=P+i*(W-2*P)/ys.length,h=(y/max)*(H-2*P),bw=(W-2*P)/ys.length*.7;return `<rect x="${(x+3).toFixed(1)}" y="${(H-P-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="#FF4876"/><text x="${(x+3+bw/2).toFixed(1)}" y="${H-6}" font-size="9" fill="#6B7280" text-anchor="middle">${esc(wk[i]||"")}</text>`;}).join("");
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:170px">${bars}</svg>`;
+}
+
+function render(data,key){
+  const d=data[key]; if(!d) return; const S=(id,h)=>{const el=document.getElementById(id); if(el) el.innerHTML=h;};
+  try{ document.getElementById("lw-name").textContent=d.name||"{{FEATURE_NAME}}"; document.getElementById("lw-date").textContent=d.launchDate||"{{LAUNCH_DATE}}"; document.getElementById("lw-week").textContent=d.weekN!=null?d.weekN:"{{WEEK_N}}"; }catch(e){}
+  try{ const b=document.getElementById("lw-banner"), t=hasTargets(d); b.className="lw-banner lw-"+levelOf(d)+(t?" has-targets":""); document.getElementById("lw-banner-text").textContent=(d.read&&d.read.verdict)||" - ";
+    S("lw-targets", t ? ("Targets: "+d.targets.map(x=>esc(x.metric)+" "+esc(x.target)).join(" &middot; ")) : "No launch targets set, so the health read is not colored."); }catch(e){}
+  try{ document.getElementById("lw-read").textContent=(d.read&&d.read.narrative)||""; }catch(e){}
+  try{ S("lw-cards",(d.cards||[]).map(c=>`<div class="lw-card ${c.primary?'primary':''}"><div class="lbl">${c.url?lnk(c.url,esc(c.label)):esc(c.label)}</div><div class="val">${esc(c.value)}</div>${c.sub?`<div class="sub">${esc(c.sub)}</div>`:''}${deltaHtml(c)}</div>`).join("")); }catch(e){}
+  try{ drawAdoption(d); }catch(e){ S("lw-adoption",'<div class="lw-empty">Chart unavailable.</div>'); }
+  try{ const fp=document.getElementById("lw-funnel-panel"), f=(d.funnel&&d.funnel.steps)||[]; if(f.length>=2){ fp.style.display=""; const top=f[0].n||1;
+      S("lw-funnel", f.map(s=>`<div class="lw-funnel-step"><span>${esc(s.step)}</span><b>${s.n.toLocaleString()}</b></div><div class="lw-bar" style="width:${Math.round((s.n/top)*100)}%"></div>`).join("")+`<div style="margin-top:4px;font-size:13px">Conversion: <b>${esc(d.funnel.conversion||Math.round((f[f.length-1].n/top)*100)+'%')}</b></div>`+(d.funnel.caveat?`<div class="lw-caveat">${esc(d.funnel.caveat)}</div>`:'')); } else fp.style.display="none"; }catch(e){}
+  try{ const gp=document.getElementById("lw-guide-panel"), g=d.guides||[]; if(g.length){ gp.style.display="";
+      S("lw-guides", `<div class="lw-th"><span>Guide</span><span>Views</span><span>Visitors</span><span>Completion</span><span>Dismissal</span></div>`+g.map(x=>`<div class="lw-guide"><span class="gname">${x.url?lnk(x.url,esc(x.name)):esc(x.name)}${x.status?`<span class="lw-pill warn">${esc(x.status)}</span>`:''}</span><span>${esc(x.views)}</span><span>${esc(x.visitors)}</span><span>${esc(x.completion)}</span><span>${esc(x.dismissal)}</span>${x.read?`<div class="lw-sub2">${esc(x.read)}</div>`:''}</div>`).join("")); } else gp.style.display="none"; }catch(e){}
+  try{ const frp=document.getElementById("lw-friction-panel"), s=(d.friction&&d.friction.surfaces)||[]; if(s.length){ frp.style.display="";
+      S("lw-friction", `<div class="lw-th lw-th-fr"><span>Surface</span><span>Visitors</span><span>Dead clicks</span><span>Rage clicks</span><span>U-turns</span><span>Avg time</span></div>`+s.map(x=>`<div class="lw-fr"><span class="fname">${x.url?lnk(x.url,esc(x.name)):esc(x.name)}</span><span>${esc(x.visitors)}</span><span>${esc(x.dead)}</span><span>${esc(x.rage)}</span><span>${esc(x.uturns!=null&&x.uturns!==""?x.uturns:"-")}</span><span>${esc(x.dwell!=null&&x.dwell!==""?x.dwell:"-")}</span>${x.note?`<div class="lw-sub2">${esc(x.note)}</div>`:''}</div>`).join("")+(d.friction.summary?`<div class="lw-note">${esc(d.friction.summary)}</div>`:'')); } else frp.style.display="none"; }catch(e){}
+  try{ const sp=document.getElementById("lw-sentiment-panel"); sp.style.display="";
+    const th=d.themes||[]; S("lw-themes", th.length?('<div class="lw-sublabel">Themes</div>'+th.map(x=>`<div class="lw-theme"><b>${esc(x.name)}</b> <span class="cnt">(${esc(x.count)})</span> &mdash; ${esc(x.description)}</div>`).join("")):"");
+    const s=d.sentiment||[]; S("lw-sentiment", s.length?('<div class="lw-sublabel" style="margin-top:12px">Representative feedback</div>'+s.map(x=>`<div class="lw-fb">${esc(x.text)}<span class="src">${esc(x.source||'feedback')}</span>${x.url?(' <a class="lw-src-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">&#8599;</a>'):''}</div>`).join("")):(th.length?"":'<div class="lw-empty">No sentiment signal for this launch yet.</div>')); }catch(e){}
+}
+
+let CURRENT="l1", CURVIEW=null;
+function setState(txt,live){ const el=document.getElementById("lw-state"); el.textContent=txt; el.className="lw-state"+(live?" live":""); }
+function lkey(){ return "lw-hist-"+(CONFIG.appId||"")+"-"+CONFIG.launches.map(l=>l.key).join(","); }
+function getLocals(){ try{ return JSON.parse(localStorage.getItem(lkey())||"[]"); }catch(e){ return []; } }
+function saveLocal(s){ try{ const a=getLocals(); a.unshift(s); localStorage.setItem(lkey(), JSON.stringify(a.slice(0,12))); }catch(e){} }
+function snapshots(){
+  const pinned=Object.assign({}, SNAPSHOT, {_tag:"pinned"});
+  const locals=getLocals().map(h=>Object.assign({}, h, {_tag:"local"}));
+  const arch=(typeof HISTORY!=="undefined"?HISTORY:[]).map(h=>Object.assign({}, h, {_tag:"archived"}));
+  return [pinned].concat(locals, arch).sort((a,b)=>String(b.asOf||"").localeCompare(String(a.asOf||"")));
+}
+function optLabel(s){ return (s.asOf||"?")+(s._tag==="pinned"?"  (current pin)":s._tag==="local"?"  (local, unpinned)":"  (archived)"); }
+function fillHistory(selectAsOf){
+  const sel=document.getElementById("lw-history"), arr=snapshots();
+  sel.innerHTML=arr.map((s,i)=>`<option value="${i}">${esc(optLabel(s))}</option>`).join("");
+  let idx=0; if(selectAsOf){ const k=arr.findIndex(s=>s.asOf===selectAsOf); if(k>=0) idx=k; }
+  sel.value=idx; sel.onchange=()=>viewSnapshot(arr[sel.value]);
+  return arr;
+}
+function viewSnapshot(s){
+  CURVIEW=s;
+  document.getElementById("lw-asof").textContent=s.asOf||"?";
+  setState(s._tag==="pinned"?"pinned snapshot":s._tag==="local"?"local (unpinned)":"archived snapshot", s._tag!=="pinned");
+  document.getElementById("lw-back").style.display = s._tag==="pinned" ? "none" : "";
+  render(s, CURRENT);
+}
+function showCurrent(){ const arr=fillHistory(SNAPSHOT.asOf); viewSnapshot(arr.find(s=>s._tag==="pinned")||arr[0]); }
+async function generatePin(){
+  // Durable + shared: trigger the configured re-pin task (agent re-pulls, re-analyses, archives old, updates this artifact).
+  if(isSet(CONFIG.repinTaskId) && HOST.runTask){
+    try{ setState("re-pinning...",true); await HOST.runTask(CONFIG.repinTaskId);
+      document.getElementById("lw-hint").textContent="Re-pin started - reload this artifact shortly to see the new pinned snapshot (and the old one moves into History)."; return; }catch(e){}
+  }
+  // Fallback: generate a snapshot now for THIS browser, until the skill re-pins it for everyone.
+  if(!HOST.callTool){ document.getElementById("lw-hint").textContent="Generating a snapshot here needs a surface that can call the Pendo connector. Otherwise run 'refresh my launch watch'."; return; }
+  setState("generating...",true); refreshNote("");
+  let res;
+  try{ res=await fetchLive(); }catch(e){ res={ ok:false, failed:["refresh (unexpected error)"] }; }
+  if(!res || !res.ok){
+    // Keep the pinned snapshot and its original "As of" date; say which call failed.
+    showCurrent();
+    refreshNote("refresh failed: "+((res&&res.failed)||["unknown call"]).join(", ")+". Showing the pinned snapshot as of "+(SNAPSHOT.asOf||"?")+".");
+    hint("Live refresh failed, so nothing was updated. Retry, or run 'refresh my launch watch'.");
+    return;
+  }
+  const data=res.data;
+  const snap={ asOf:new Date().toISOString().slice(0,10) }; snap[CURRENT]=data[CURRENT];
+  saveLocal(snap);
+  const arr=fillHistory(snap.asOf); viewSnapshot(arr.find(s=>s._tag==="local"&&s.asOf===snap.asOf)||arr[0]);
+  document.getElementById("lw-hint").textContent="Generated a local snapshot (this browser). To pin it for everyone and archive it, run 'refresh my launch watch'.";
+}
+function refreshNote(m){ const el=document.getElementById("lw-refresh-note"); if(!el) return; el.textContent=m||""; el.hidden=!m; }
+function hint(m){ document.getElementById("lw-hint").textContent=m; }
+function fname(ext){ const src=CURVIEW||SNAPSHOT, nm=(src[CURRENT]&&src[CURRENT].name)||"launch", stamp=src.asOf||""; return ("launch-watch-"+nm+"-"+stamp+"."+ext).replace(/[^a-z0-9.\-]+/gi,"-").toLowerCase(); }
+function downloadBlob(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
+function frozenRoot(){
+  const root=document.getElementById("lw-root").cloneNode(true);
+  const bar=root.querySelector(".lw-bar-row"); if(bar) bar.remove();
+  const lc=document.querySelector("#lw-adoption canvas");
+  if(lc){ try{ const url=lc.toDataURL("image/png"); const host=root.querySelector("#lw-adoption"); if(host) host.innerHTML='<img src="'+url+'" style="width:100%">'; }catch(e){} }
+  return root;
+}
+function exportHTML(){
+  try{ const style=document.querySelector("style").outerHTML, root=frozenRoot();
+    const src=CURVIEW||SNAPSHOT, nm=(src[CURRENT]&&src[CURRENT].name)||"launch", stamp=src.asOf||"";
+    const doc='<!doctype html><html><head><meta charset="utf-8"><title>Launch Watch - '+nm+' ('+stamp+')</title></head><body style="margin:0;background:#F6F7FB">'+style+root.outerHTML+'</body></html>';
+    downloadBlob(new Blob([doc],{type:"text/html"}), fname("html"));
+  }catch(e){ hint("HTML export not available in this view."); }
+}
+function exportPNG(){
+  try{
+    const style=document.querySelector("style").outerHTML, root=frozenRoot();
+    const base=document.getElementById("lw-root"), w=base.offsetWidth||1040, h=base.scrollHeight||1400;
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">'+style+root.outerHTML+'</div></foreignObject></svg>';
+    const img=new Image();
+    img.onload=function(){ const c=document.createElement("canvas"); c.width=w*2; c.height=h*2; const ctx=c.getContext("2d"); ctx.scale(2,2); ctx.fillStyle="#F6F7FB"; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0); try{ c.toBlob(function(b){ b?downloadBlob(b,fname("png")):hint("PNG export not supported here - use PDF or HTML."); }); }catch(e){ hint("PNG export blocked in this view - use PDF or HTML."); } };
+    img.onerror=function(){ hint("PNG export is not supported in this view - use PDF or HTML."); };
+    img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+  }catch(e){ hint("PNG export not available in this view."); }
+}
+function exportPDF(){ try{ window.focus(); window.print(); }catch(e){ hint("Use your browser's Print, then Save as PDF."); } }
+function buildTabs(){ const tabs=document.getElementById("lw-tabs"); if(CONFIG.launches.length<2){ tabs.style.display="none"; return; }
+  tabs.innerHTML=CONFIG.launches.map((L,i)=>`<div class="lw-tab ${i===0?'active':''}" data-k="${L.key}">${esc(L.name)}</div>`).join("");
+  tabs.querySelectorAll(".lw-tab").forEach(t=>t.onclick=()=>{tabs.querySelectorAll(".lw-tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");CURRENT=t.dataset.k;showCurrent();}); }
+document.getElementById("lw-generate").onclick=generatePin;
+document.getElementById("lw-back").onclick=showCurrent;
+document.getElementById("lw-export-pdf").onclick=function(){ document.getElementById("lw-export-menu").hidden=true; exportPDF(); };
+(function(){ const menu=document.getElementById("lw-export-menu");
+  document.getElementById("lw-export-caret").onclick=function(e){ e.stopPropagation(); menu.hidden=!menu.hidden; };
+  menu.querySelectorAll(".lw-menu-item").forEach(function(it){ it.onclick=function(){ menu.hidden=true; const f=it.dataset.fmt; if(f==="pdf") exportPDF(); else if(f==="png") exportPNG(); else exportHTML(); }; });
+  document.addEventListener("click", function(){ menu.hidden=true; });
+})();
+// A local file (file://) has no artifact toolbar, so don't point at one.
+if(location.protocol==="file:") hint("Snapshot file, shareable with your team. It includes customer quotes, so check it before sharing outside your team. Export a frozen copy for leadership; to update the numbers, re-run the skill ('refresh my launch watch').");
+buildTabs(); showCurrent();  // PINNED by default - no connector call on load
+</script>
