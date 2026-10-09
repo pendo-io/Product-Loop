@@ -1,0 +1,317 @@
+{
+  "_comment": "Shape reference for config.json. The conductor writes the real file to <workspace>/.daily-digest/config.json during setup (references/onboarding.md). All values here are placeholders.",
+  "_meta": {
+    "conductor_version": "1.0.0",
+    "provenance": {
+      "_note": "Keyed by config dot-path. set_by: spec_default | user | inferred | learned. base_value = the default at the time. See references/updates.md.",
+      "schedule.time": {
+        "spec_version": "1.0.0",
+        "set_by": "user",
+        "base_value": "08:30"
+      },
+      "digest.channels": {
+        "set_by": "spec_default",
+        "base_value": [
+          {
+            "type": "chat"
+          }
+        ],
+        "spec_version": "1.0.0"
+      }
+    }
+  },
+  "onboarding_progress": {
+    "config_home": "<workspace>/.daily-digest",
+    "phase": "done",
+    "last_skill": null
+  },
+  "user": {
+    "name": "<your name>",
+    "email": "<your work email>",
+    "_email_note": "Asked at setup. Members match the user by name or email, for example competitor-release-producer's owner match.",
+    "tracker_person_ref": "<your user id in the tracker, if connected>",
+    "slack_user_ref": "<your Slack user id, if Slack delivery is used>",
+    "timezone": "<IANA timezone, for example America/Denver>",
+    "_timezone_note": "schedule.timezone defaults to this; keep them equal unless the digest should run on another clock."
+  },
+  "_role_options": [
+    "PM",
+    "PL",
+    "Exec",
+    "Other"
+  ],
+  "role": "PM",
+  "enabled_skills": [
+    {
+      "name": "feature-validation",
+      "cadence": "daily",
+      "status": "configured"
+    },
+    {
+      "name": "product-manager-weekly-update",
+      "cadence": "weekly-<day>",
+      "status": "configured"
+    },
+    {
+      "name": "feedback-idea-producer",
+      "cadence": "daily",
+      "status": "configured"
+    },
+    {
+      "name": "support-trends-producer",
+      "cadence": "daily",
+      "status": "configured"
+    },
+    {
+      "name": "engineering-progress-producer",
+      "cadence": "daily",
+      "status": "configured"
+    },
+    {
+      "name": "field-qual-producer",
+      "cadence": "daily",
+      "status": "not_installed"
+    },
+    {
+      "name": "competitor-release-producer",
+      "cadence": "daily",
+      "status": "configured"
+    },
+    {
+      "name": "attention-radar",
+      "cadence": "every_run_last",
+      "status": "configured"
+    }
+  ],
+  "_enabled_skills_note": "status: configured | not_installed | blocked. blocked = a required connector is missing. cadence: daily | weekly-<day> | every_run_last. A weekly writer's day is set at setup and this cadence is the only place it is stored under the conductor (the writer's own schedule section is not used). If setup skipped the question, the daily run applies the default and saves it: the PM update on the last working day of the week, the product-lead rollup on the first. launch-watch appears here only when its weekly refresh is enabled, as weekly-<day>.",
+  "_handoff_note": "Producer hand-offs the conductor relies on (members keep these in their own config). support_trends.eng_wait_queue = support-trends-producer's eng_waiting entries with queued_for_jira: true and no linked_jira (escalations with no linked bug); run support-trends-producer before engineering-progress-producer so it can read them. linked_jira: null means no linked bug. engineering-progress-producer's decisions key (product-consequential decisions: a scope cut, a descoped epic, a bug or story closed Won't Do (or not planned, or canceled), or a committed item moved to a later release) is composed under Shipped & in-flight.",
+  "installed_skills": {
+    "feature-validation": {
+      "installed": true,
+      "version": "1.0.0",
+      "checked_at": null,
+      "mute_reminder": false
+    },
+    "field-qual-producer": {
+      "installed": false,
+      "mute_reminder": false
+    }
+  },
+  "members": {
+    "_note": "Optional role -> skill-name overrides, for when a member is installed under a different name, or two installed skills match one role.",
+    "support_trends": "support-trends-producer"
+  },
+  "sources": [
+    {
+      "id": "src-001",
+      "type": "slack_channel",
+      "label": "#my-team",
+      "ref": "<channel id>",
+      "keywords": [
+        "<keyword>"
+      ],
+      "enabled": true,
+      "consumers": "all"
+    },
+    {
+      "id": "src-002",
+      "type": "tracker_page",
+      "label": "Strategy doc",
+      "ref": "<page URL>",
+      "enabled": true,
+      "consumers": "all"
+    },
+    {
+      "id": "src-003",
+      "type": "meeting_notes",
+      "label": "My meeting notes",
+      "ref": "auto",
+      "consumers": [
+        "product-manager-weekly-update"
+      ],
+      "enabled": true
+    },
+    {
+      "id": "src-004",
+      "type": "call_recordings",
+      "label": "Customer calls",
+      "ref": "<library or team ref>",
+      "consumers": [
+        "digest"
+      ],
+      "enabled": false
+    }
+  ],
+  "focus_areas": {
+    "areas": [
+      "<product area>"
+    ],
+    "feature_ids": [],
+    "set_by": "user"
+  },
+  "preferences": {
+    "owned_features_confirmed": true,
+    "review_step": {
+      "enabled": true,
+      "channel": "chat"
+    }
+  },
+  "org_constants": {
+    "_note": "Reserved for org-wide values (Jira site, support desk domain, SLA reference, feedback-idea URL pattern, fiscal-year start month). The conductor passes this block to every member; a member reads it first, then its own settings. Readers: jira_site (engineering-progress-producer), support_desk_domain and sla_reference (support-trends-producer), feedback_idea_url_pattern (feedback-idea-producer), fiscal_year_start_month (feature-creation). Leave any you don't have as null.",
+    "jira_site": "<your Jira site URL>",
+    "support_desk_domain": "<your support desk domain>",
+    "sla_reference": "<link to your SLA page, or the targets pasted as text>",
+    "feedback_idea_url_pattern": "<your Pendo feedback idea URL, with {subscriptionId} and {ideaId} placeholders>",
+    "fiscal_year_start_month": 1
+  },
+  "pendo": {
+    "_note": "Optional. Used by Pendo-backed members (feedback-idea-producer, launch-watch). product_area_ids are Pendo ids for the user's area.",
+    "subscription_id": null,
+    "app_id": null,
+    "product_area_ids": []
+  },
+  "competitor_radar": {
+    "_note": "Shared settings for competitor-release-producer when the conductor runs it (see that skill's config.example.json for every key). The producer reads and writes this block instead of its own config.json. Its delta anchor is not here: it lives in competitor_release.last_run.",
+    "competitors": [
+      {
+        "name": "<Competitor A>",
+        "sources": [
+          {
+            "type": "changelog",
+            "url": "<changelog URL>"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "type": "pasted"
+      }
+    ],
+    "releases_db": null,
+    "fields": {},
+    "features_db": null,
+    "window_days": 7,
+    "first_run_days": 30,
+    "triage_filter": [
+      "relevant"
+    ],
+    "match_by": [
+      "area",
+      "owner"
+    ],
+    "competitors_watch": [],
+    "delta_anchor": "created",
+    "seen": [],
+    "triage_answers": {}
+  },
+  "competitor_release": {
+    "_note": "competitor-release-producer's own section. last_run is its delta anchor (ISO timestamp), separate from the conductor's top-level last_run.",
+    "last_run": null
+  },
+  "optional_skills": {
+    "stop_asking": false,
+    "last_offered": null,
+    "skills": {
+      "release-note-drafter": {
+        "status": "offered"
+      },
+      "launch-watch": {
+        "status": "offered"
+      }
+    }
+  },
+  "radar": {
+    "_note": "Digest settings, passed to attention-radar as its radar config. dismissed_conflicts = pairs the user marked intentionally parallel. call_notes_source = the call-notes provider resolved at setup; the conductor uses it to pick which call source to pass field-qual-producer. attention-radar never reads a source itself.",
+    "call_notes_source": null,
+    "include_email": false,
+    "discovery": {
+      "window": "since_last_run",
+      "exclude_already_seen": true,
+      "first_run_hours": 24,
+      "trend_threshold": "yellow_to_red",
+      "trend_detection": true
+    },
+    "dismissed_conflicts": [],
+    "_discovery_note": "window: surface only what's new since last run; first_run_hours caps the first run. exclude_already_seen drops comms that came straight to the user but still mines them for trends. trend_threshold yellow_to_red: surface a trend from the set-aside pile only when it is escalating from heads-up to needs-action or worse. include_email: whether email_thread sources are passed to members; no current member reads email, so it stays false until one does."
+  },
+  "schedule": {
+    "timezone": "<IANA timezone>",
+    "cadence": "daily",
+    "time": "08:30",
+    "scheduler": "none",
+    "_scheduler_options": [
+      "none",
+      "cowork",
+      "other"
+    ],
+    "inferred_from_calendar": false,
+    "companion_tasks": []
+  },
+  "digest": {
+    "channels": [
+      {
+        "type": "chat",
+        "ref": null,
+        "enabled": true
+      }
+    ],
+    "report_name": "Daily digest",
+    "quiet_days": false
+  },
+  "comms_profile": {
+    "_note": "Optional (onboarding Step 6b). Omit entirely to use the house default voice. Example values are illustrative.",
+    "insights": {
+      "source": "pdf",
+      "raw_ref": "<file name or URL, or null if pasted>",
+      "effective_communications": [
+        "<verbatim do>"
+      ],
+      "barriers": [
+        "<verbatim don't>"
+      ],
+      "tone_cues": "<short verbatim tone cue>"
+    },
+    "voice_directive": "Brisk and decision-first; lead with the choice and a recommended option; short updates; never re-ask an answered question.",
+    "intensity": "balanced",
+    "feedback_log": [],
+    "set_by": "user"
+  },
+  "last_run": {
+    "iso_timestamp": null,
+    "skills_ran": [],
+    "buckets": {
+      "done": 0,
+      "needs_ok": 0,
+      "needs_action": 0
+    },
+    "blocked": []
+  },
+  "digest_budget": {
+    "show_per_bucket": 3,
+    "collapse_done": true,
+    "max_proactive_asks": 3
+  },
+  "carryover": {
+    "items": []
+  },
+  "activity_log": {
+    "path": "activity-log.jsonl"
+  },
+  "snooze": {
+    "_note": "Per gap-check / nudge id: don't re-surface until this date (3 days after it was last shown) unless it escalates.",
+    "_example": {
+      "gap:eng-team:<feature>": "<YYYY-MM-DD>"
+    }
+  },
+  "learning": {
+    "enabled": true,
+    "autopilot": false,
+    "observations": [],
+    "recommendations": [],
+    "dismissed_patterns": []
+  },
+  "feature_validation": {
+    "_note": "Optional per-member section. Members that keep config in the shared file read their own section; see each member's own config.example.json for its keys."
+  }
+}
