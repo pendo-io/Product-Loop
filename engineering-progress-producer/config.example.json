@@ -1,0 +1,22 @@
+{
+  "_comment": "Example config.json for engineering-progress-producer. Copy to config.json next to SKILL.md and replace the placeholders. Don't commit a real config.json. The jira_progress namespace and jira-named keys apply to any tracker.",
+  "focus_areas": ["<your product area>"],
+  "last_run": null,
+  "jira_progress": {
+    "tracker": "<jira | github | linear | azure_devops | shortcut | other | pasted>",
+    "board_urls": ["<board, project, or repo URL, for example https://<your-jira-site>/jira/software/c/projects/<PROJ>/boards/<board-id> or https://github.com/<owner>/<repo>>"],
+    "boards_resolved": [
+      { "cloudId": "<site id (cloudId) on Jira, workspace id or null elsewhere; resolved on first run>", "project": "<PROJ, owner/repo, or team>", "board_id": "<board-id or null>", "board_filter": "<scope query in the tracker's syntax: JQL, GitHub search qualifiers, a saved filter>" }
+    ],
+    "features_db": "<feature tracker URL, or \"pasted\", or null>",
+    "epic_feature_map": { "<EPIC-KEY or milestone/project name>": "<feature name>" },
+    "customer_facing_signal": { "type": "label", "value": "customer-facing" },
+    "custom_fields": { "flagged": "<field id, label, or state that marks blocked; discovered at setup>", "customer_impact": "<field id, label, or null>", "support_ticket_ids": "<field id or null>" },
+    "stall_days": 5,
+    "weekly_summary": null
+  },
+  "support_trends": {
+    "_comment": "Optional. Written by support-trends-producer; read-only here. = the support producer's eng_waiting entries with queued_for_jira: true and no linked_jira.",
+    "eng_wait_queue": []
+  }
+}
