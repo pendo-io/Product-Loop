@@ -1,0 +1,40 @@
+{
+  "_comment": "Example of the release_note_drafter section of config.json. Setup (SKILL.md) and the voice lookup (references/voice.md) write it after the user confirms. Every value is a placeholder and yours to replace. null voice = the skill's built-in style. Don't commit a real config to a shared repo.",
+  "release_note_drafter": {
+    "version": "1.0.0",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z",
+    "page": {
+      "_comment": "status_labels maps the standard's open beta and GA to your page's own tag names. Closed beta still never publishes.",
+      "release_notes_url": "<your release notes page URL>",
+      "product_tags": ["<product or module tag>", "<product or module tag>"],
+      "status_labels": { "open_beta": "<your label for open beta>", "ga": "<your label for GA>" },
+      "help_center_url": "<where your help articles live>"
+    },
+    "glossary": {
+      "_comment": "Values for the terminology traps in references/release-note-standards.md. banned_phrases are added to the mechanical check's list. allowed_names are verified product or feature names that contain \"&\" or a banned word; the check skips them.",
+      "official_terms": ["<Product or feature name, exact capitalization>"],
+      "terms_to_avoid": [
+        { "avoid": "<term>", "use_instead": "<term>" }
+      ],
+      "hierarchy_terms": ["<word that names a level in your product, for example workspace>"],
+      "banned_phrases": ["<phrase that belongs in marketing, not release notes>"],
+      "allowed_names": ["<verified name that contains & or a banned word, exact spelling>"],
+      "style_files": ["<title or link of your style guide or glossary>"]
+    },
+    "voice": {
+      "_comment": "source: config, skill, memory, instructions, or pasted. source_skill names an installed voice or style skill (a pointer, never its content); source_refs lists memory or instruction files or doc titles. The voice sets tone and word choice only; the skill's hard rules always win.",
+      "source": "skill",
+      "source_skill": "<installed voice or style skill name>",
+      "source_refs": [],
+      "summary": "<two to four lines: how your brand sounds>",
+      "we_are": ["<trait>", "<trait>"],
+      "we_are_not": ["<trait>", "<trait>"],
+      "terms_to_avoid": [
+        { "avoid": "<term>", "use_instead": "<term>" }
+      ],
+      "set_aside": ["<voice rule the hard rules override, for example: em dashes>"],
+      "confirmed_at": "2026-01-01T00:00:00Z"
+    }
+  }
+}
