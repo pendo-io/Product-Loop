@@ -1,0 +1,39 @@
+{
+  "focus_areas": ["Workload View", "Timesheets"],
+  "role": "PM",
+  "user": { "name": "Your Name", "email": "you@example.invalid" },
+  "competitor_release": { "last_run": null },
+  "competitor_radar": {
+    "competitors": [
+      { "name": "Competitor A", "sources": [ { "type": "changelog", "url": "https://competitor-a.example/changelog" } ] },
+      { "name": "Competitor B", "sources": [ { "type": "rss", "url": "https://competitor-b.example/releases.rss" } ] }
+    ],
+    "sources": [
+      { "type": "tracker", "tool": "notion", "ref": "<your competitor-release database link, or remove this entry>" },
+      { "type": "pasted" }
+    ],
+    "releases_db": null,
+    "fields": {
+      "title": "Title",
+      "triage": "Triage",
+      "competitor": "Competitor",
+      "product_area": "Product Area",
+      "related_feature": "Related Feature",
+      "summary": "Summary",
+      "published": "Published",
+      "owners": "Owners",
+      "tags": "Tags",
+      "url": "URL",
+      "added_on": "Created time"
+    },
+    "features_db": null,
+    "window_days": 7,
+    "triage_filter": ["relevant"],
+    "match_by": ["area", "owner"],
+    "competitors_watch": [],
+    "delta_anchor": "created",
+    "first_run_days": 30,
+    "seen": [],
+    "triage_answers": {}
+  }
+}
