@@ -1,0 +1,40 @@
+{
+  "_comment": "Example of the product_announcement section of config.json. Setup (SKILL.md) and the voice lookup (references/voice.md) write it after the user confirms. Every value is a placeholder and yours to replace. null voice = the skill's built-in style. Don't commit a real config to a shared repo.",
+  "product_announcement": {
+    "version": "1.0.0",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z",
+    "setup": {
+      "_comment": "status_values replaces the default set (GA, Open Beta, Closed Beta, EA, Coming Soon) when present.",
+      "announcement_channel": "#<your-announcement-channel>",
+      "questions_channel_pattern": "#<area>-launch-questions",
+      "product_areas": [
+        { "name": "<product area>", "emoji": ":<emoji>:", "questions_channel": "#<channel>" }
+      ],
+      "status_values": ["<stage>", "<stage>"],
+      "regions": ["<region>", "<region>"]
+    },
+    "glossary": {
+      "_comment": "allowed_names are verified names the mechanical check skips (SKILL.md Step 2), for example a term like COVID-19 that looks like a ticket key.",
+      "official_terms": ["<Product or feature name, exact capitalization>"],
+      "terms_to_avoid": [
+        { "avoid": "<internal shorthand or codename>", "use_instead": "<plain term or product name>" }
+      ],
+      "allowed_names": ["<verified name the check should skip, exact spelling>"]
+    },
+    "voice": {
+      "_comment": "source: config, skill, memory, instructions, or pasted. source_skill names an installed voice or style skill (a pointer, never its content); source_refs lists memory or instruction files or doc titles. The voice sets tone and word choice only; the skill's hard rules always win.",
+      "source": "skill",
+      "source_skill": "<installed voice or style skill name>",
+      "source_refs": [],
+      "summary": "<two to four lines: how your brand sounds>",
+      "we_are": ["<trait>", "<trait>"],
+      "we_are_not": ["<trait>", "<trait>"],
+      "terms_to_avoid": [
+        { "avoid": "<term>", "use_instead": "<term>" }
+      ],
+      "set_aside": ["<voice rule the hard rules override, for example: em dashes>"],
+      "confirmed_at": "2026-01-01T00:00:00Z"
+    }
+  }
+}
