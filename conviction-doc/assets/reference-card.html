@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTM Launch Scoring</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1f2328;
+    --muted: #57606a;
+    --band: #f3f4f6;
+    --card: #ffffff;
+    --border: #d0d7de;
+    --circle-bg: #f6f8fa;
+    --d1: #2563eb;
+    --d2: #16a34a;
+    --d3: #7c3aed;
+    --d4: #ea580c;
+    --t-low: #9ca3af;
+    --t-mid: #f59e0b;
+    --t-high: #ec4899;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1117;
+      --text: #e6edf3;
+      --muted: #9da7b3;
+      --band: #161b22;
+      --card: #0d1117;
+      --border: #30363d;
+      --circle-bg: #161b22;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1117;
+    --text: #e6edf3;
+    --muted: #9da7b3;
+    --band: #161b22;
+    --card: #0d1117;
+    --border: #30363d;
+    --circle-bg: #161b22;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  section { margin-bottom: 20px; }
+  .band {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--band);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+  }
+  .badge {
+    flex: none;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 3px 8px;
+    margin-top: 1px;
+  }
+  .d1 .badge { background: var(--d1); }
+  .d2 .badge { background: var(--d2); }
+  .d3 .badge { background: var(--d3); }
+  .d4 .badge { background: var(--d4); }
+  .band strong { display: block; font-size: 15px; }
+  .band span { color: var(--muted); }
+  .levels {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .level {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--circle-bg);
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .level b { display: block; margin-bottom: 4px; }
+  .level p { margin: 0; color: var(--muted); }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .legend div { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  @media (max-width: 800px) { .levels { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .levels { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>GTM Launch Scoring — Reference Guide</h1>
+  <p class="sub">Rate each of the four dimensions from 1 to 4; the ratings add up to a score out of 16.</p>
+
+  <section class="d1">
+    <div class="band"><span class="badge">D1</span><div><strong>Customer Experience Impact</strong><span>How much does this change what a user sees, understands, or does inside your product?</span></div></div>
+    <div class="levels">
+      <div class="level"><span class="num">1</span><b>Invisible</b><p>Purely backend. No user-visible change — performance, infra, or data pipeline work.</p></div>
+      <div class="level"><span class="num">2</span><b>Subtle change</b><p>Label, copy, tooltip, or calculation update, or a small addition such as a new button or export on an existing screen. Users may notice; most won't without being told.</p></div>
+      <div class="level"><span class="num">3</span><b>Meaningful update</b><p>An existing feature, screen or workflow changes noticeably. Users will remark on it.</p></div>
+      <div class="level"><span class="num">4</span><b>Net-new feature</b><p>Entirely new tool, screen, workflow, or interaction pattern. Users need to discover and adopt it.</p></div>
+    </div>
+  </section>
+
+  <section class="d2">
+    <div class="band"><span class="badge">D2</span><div><strong>Customer Adoption Impact</strong><span>How much is this release expected to increase adoption or stickiness for this feature or product area?</span></div></div>
+    <div class="levels">
+      <div class="level"><span class="num">1</span><b>No behavior change</b><p>Edge case, bug fix, or niche workflow. Doesn't change how users engage.</p></div>
+      <div class="level"><span class="num">2</span><b>Existing users only</b><p>Some current users may utilize. Unlikely to draw anyone new to the product.</p></div>
+      <div class="level"><span class="num">3</span><b>Announcement-worthy</b><p>Worth proactively telling all existing users about. Could deepen engagement or retention.</p></div>
+      <div class="level"><span class="num">4</span><b>Brings in new users</b><p>Expected to expand who uses this feature or the feature's overall product area.</p></div>
+    </div>
+  </section>
+
+  <section class="d3">
+    <div class="band"><span class="badge">D3</span><div><strong>Competitive Advantage / Win-Rate</strong><span>How much does this strengthen your competitive position or increase win rate for someone evaluating your product?</span></div></div>
+    <div class="levels">
+      <div class="level"><span class="num">1</span><b>No change</b><p>Too minor to impact win rate or competitive edge. Won't come up in competitive conversations.</p></div>
+      <div class="level"><span class="num">2</span><b>Closing a known gap</b><p>Matches what key competitors offer or removes an objection. Rarely the deciding factor in a deal.</p></div>
+      <div class="level"><span class="num">3</span><b>Clear competitive angle</b><p>Distinct story that meaningfully improves win rate in deals where you were previously losing. GTM should know how to use it.</p></div>
+      <div class="level"><span class="num">4</span><b>Leading the market</b><p>Few or no competitors have this. Expected to unlock new segments, reverse losses, or be frequently cited as the reason you won.</p></div>
+    </div>
+  </section>
+
+  <section class="d4">
+    <div class="band"><span class="badge">D4</span><div><strong>Enablement Effort</strong><span>How much new enablement work does this require across the GTM org?</span></div></div>
+    <div class="levels">
+      <div class="level"><span class="num">1</span><b>No enablement lift</b><p>Help-center update, release notes, product announcement sufficient. No demo, training, or messaging changes required.</p></div>
+      <div class="level"><span class="num">2</span><b>Just in time</b><p>Impacts value story and demo slightly. Minor updates to existing enablement but no live field time required. Covered in your regular internal update.</p></div>
+      <div class="level"><span class="num">3</span><b>Standard feature training</b><p>Need live time with some GTM segments. Feature impacts positioning/value or there's pricing nuance. Requires your enablement lead time (for example N weeks).</p></div>
+      <div class="level"><span class="num">4</span><b>Full GTM enablement</b><p>Typical of larger launches. Requires your launch training, messaging updates, and a full demo environment and script. All GTM functions and leadership aligned.</p></div>
+    </div>
+  </section>
+
+  <div class="legend">
+    <div><span class="dot" style="background:var(--t-low)"></span><span><b>≤7</b> Release marketing only (Tier 3)</span></div>
+    <div><span class="dot" style="background:var(--t-mid)"></span><span><b>8–13</b> Needs a conversation (potential Tier 2)</span></div>
+    <div><span class="dot" style="background:var(--t-high)"></span><span><b>14–16</b> Potential Tier 1 launch</span></div>
+  </div>
+</main>
+</body>
+</html>
