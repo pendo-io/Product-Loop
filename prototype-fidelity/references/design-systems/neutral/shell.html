@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAGE TITLE HERE</title>
+  <!-- Neutral default design system. System fonts only: no external font, CDN, or script. -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* ── Palette ── */
+      --gray-0:  #FFFFFF; --gray-10: #F6F8FA; --gray-20: #EEF1F4; --gray-40: #D0D7DE;
+      --gray-60: #8C959F; --gray-70: #6E7781; --gray-80: #59636E; --gray-100: #1F2328;
+      --blue-5:  #EFF4FF; --blue-50: #2563EB; --blue-60: #1D4ED8;
+
+      /* ── Semantic tokens ── */
+      --color-brand:       #2563EB;
+      --color-brand-light: #EFF4FF;
+      --text-primary:   #1F2328;
+      --text-secondary: #59636E;
+      --text-muted:     #656D76;  /* 4.93:1 on the sidebar, 5.25:1 on white */
+      --text-disabled:  #8C959F;
+      --surface-default:   #FFFFFF;
+      --surface-secondary: #F6F8FA;
+      --surface-hover:     #EEF1F4;
+      --surface-border:    #D0D7DE;  /* dividers only */
+      --input-border:      #8C959F;  /* 3.04:1 on white, for form control borders */
+      --btn-primary-bg:       #2563EB;
+      --btn-primary-bg-hover: #1D4ED8;
+      --focus-ring: #2563EB;
+
+      /* ── Fonts ── */
+      --font-display: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-ui:      system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono:    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+      /* ── Layout constants ── */
+      --top-nav-height:       56px;
+      --side-nav-collapsed-w: 64px;
+      --side-nav-expanded-w:  240px;
+      --content-padding:      24px;
+
+      /* ── Radius ── */
+      --radius-sm:   6px;   /* buttons, inputs */
+      --radius-nav:  6px;   /* nav items */
+      --radius-card: 8px;   /* cards */
+      --radius-pill: 999px;
+
+      /* ── Type scale ── */
+      --font-size-h1: 32px; --line-height-h1: 40px;
+      --font-size-h2: 24px; --line-height-h2: 32px;
+      --font-size-h3: 20px; --line-height-h3: 28px;  /* default .page-title */
+      --font-size-h4: 16px; --line-height-h4: 24px;
+      --font-size-body:    14px; --line-height-body:    20px;
+      --font-size-body-sm: 12px; --line-height-body-sm: 16px;
+      --font-size-btn: 14px; --font-weight-btn: 600;
+      --btn-height-md: 36px; --btn-height-sm: 32px;
+      --font-size-nav-eyebrow: 11px; --letter-spacing-nav-eyebrow: 0.08em;
+      --font-size-metric-lg: 32px; --font-size-metric-md: 24px; --font-weight-metric: 700;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-ui);
+      font-size: var(--font-size-body);
+      line-height: var(--line-height-body);
+      color: var(--text-primary);
+      background: var(--surface-secondary);
+    }
+
+    /* ── App shell ── */
+    .app-content { display: flex; height: 100vh; overflow: hidden; }
+
+    .side-nav {
+      flex: 0 0 var(--side-nav-expanded-w);
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 12px;
+      background: var(--surface-secondary);
+      border-right: 1px solid var(--surface-border);
+      overflow-y: auto;
+    }
+    .side-nav.collapsed { flex-basis: var(--side-nav-collapsed-w); }
+    .side-nav.collapsed .nav-label, .side-nav.collapsed .nav-section-label, .side-nav.collapsed .side-nav__logo-text { display: none; }
+
+    .side-nav__header { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px; margin-bottom: 8px; }
+    .side-nav__logo-mark { width: 24px; height: 24px; border-radius: 6px; background: var(--color-brand); flex-shrink: 0; }
+    .side-nav__logo-text { font-weight: 700; font-size: 16px; }
+
+    .nav-section-label {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-nav-eyebrow); letter-spacing: var(--letter-spacing-nav-eyebrow);
+      text-transform: uppercase; color: var(--text-muted);
+      padding: 16px 8px 4px;
+    }
+    .nav-list { list-style: none; }
+    .nav-option {
+      display: flex; align-items: center; gap: 10px;
+      height: 36px; padding: 0 8px;
+      border-radius: var(--radius-nav);
+      color: var(--text-secondary); cursor: pointer;
+    }
+    .nav-option:hover { background: var(--surface-hover); }
+    .nav-option.active { background: var(--color-brand-light); color: var(--color-brand); font-weight: 600; }
+    .nav-icon { width: 18px; height: 18px; display: inline-flex; }
+    .nav-icon svg { width: 18px; height: 18px; }
+
+    .main-container { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; background: var(--surface-default); }
+    .top-nav {
+      flex: 0 0 var(--top-nav-height);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 var(--content-padding);
+      border-bottom: 1px solid var(--surface-border);
+    }
+    .top-nav__search {
+      width: 320px; height: 32px; padding: 0 12px;
+      border: 1px solid var(--input-border); border-radius: var(--radius-sm);
+      font: inherit; color: var(--text-primary); background: var(--surface-default);
+    }
+    .top-nav__avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-hover); border: 1px solid var(--surface-border); }
+
+    /* ── Page content: the only part that changes per page ── */
+    .page-content { flex: 1 1 auto; overflow-y: auto; padding: var(--content-padding); }
+
+    /* ── Page helpers ── */
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-family: var(--font-display); font-size: var(--font-size-h3); line-height: var(--line-height-h3); font-weight: 600; }
+    .page-subtitle { color: var(--text-secondary); margin-top: 4px; }
+    .page-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-primary, .btn-secondary {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: var(--btn-height-md); padding: 0 14px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-ui); font-size: var(--font-size-btn); font-weight: var(--font-weight-btn);
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--btn-primary-bg); color: #FFFFFF; border: none; }
+    .btn-primary:hover { background: var(--btn-primary-bg-hover); }
+    .btn-secondary { background: var(--surface-default); color: var(--text-primary); border: 1px solid var(--surface-border); }
+    .btn-secondary:hover { background: var(--surface-hover); }
+    :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+    .card { background: var(--surface-default); border: 1px solid var(--surface-border); border-radius: var(--radius-card); padding: 16px; }
+    .metric-value { font-size: var(--font-size-metric-lg); font-weight: var(--font-weight-metric); line-height: 1; }
+    .metric-label { font-size: var(--font-size-body-sm); color: var(--text-secondary); margin-top: 4px; }
+    .badge { padding: 2px 8px; border-radius: var(--radius-pill); font-size: var(--font-size-body-sm); font-weight: 600; }
+    .badge-pos     { background: #DCFCE7; color: #166534; }
+    .badge-neg     { background: #FEE2E2; color: #991B1B; }
+    .badge-neutral { background: var(--surface-hover); color: var(--text-secondary); }
+
+    /* ── PAGE-SPECIFIC STYLES GO BELOW THIS LINE ── */
+
+  </style>
+</head>
+<body>
+  <!-- App shell. Only the contents of .page-content change per page. -->
+  <div class="app-content">
+
+    <nav class="side-nav" aria-label="Main navigation">
+      <div class="side-nav__header">
+        <span class="side-nav__logo-mark" aria-hidden="true"></span>
+        <span class="side-nav__logo-text">Product</span>
+      </div>
+      <ul class="nav-list">
+        <li><div class="nav-option" data-nav="home"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="nav-label">Home</span></div></li>
+        <li><div class="nav-option" data-nav="dashboards"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span><span class="nav-label">Dashboards</span></div></li>
+        <li><div class="nav-option" data-nav="reports"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span><span class="nav-label">Reports</span></div></li>
+      </ul>
+      <div class="nav-section-label">Manage</div>
+      <ul class="nav-list">
+        <li><div class="nav-option" data-nav="people"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M1 21a8 8 0 0 1 16 0"/></svg></span><span class="nav-label">People</span></div></li>
+        <li><div class="nav-option" data-nav="settings"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span class="nav-label">Settings</span></div></li>
+      </ul>
+    </nav>
+
+    <div class="main-container">
+      <header class="top-nav">
+        <input class="top-nav__search" type="search" placeholder="Search" aria-label="Search">
+        <span class="top-nav__avatar" aria-hidden="true"></span>
+      </header>
+
+      <main class="page-content">
+        <!-- PAGE CONTENT GOES HERE -->
+      </main>
+    </div>
+
+  </div>
+</body>
+</html>
