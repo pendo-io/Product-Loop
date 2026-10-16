@@ -33,7 +33,7 @@ Say so plainly and move on: the user runs "run my digest now" each morning. The 
 
 ## Companion tasks (off-cadence members)
 
-A member that needs to run at a time other than the morning digest (for example an afternoon change check) can get a companion task. None of the current members need one. `launch-watch`'s weekly refresh is not a companion task: it is a `weekly-<day>` cadence run by the daily task. Its on-demand re-pin task (no cadence, the engine of its dashboard's Generate button) belongs to `launch-watch`, not to the conductor, and is not recorded in `schedule.companion_tasks`. If a future member's registry row declares a distinct native time, offer a second task `daily-digest-conductor-<member>` at that time, record it in `schedule.companion_tasks`, and register it only when a scheduler exists.
+A member that needs to run at a time other than the morning digest (for example an afternoon change check) can get a companion task. None of the current members need one. `launch-watch`'s weekly refresh is not a companion task: it is a `weekly-<day>` cadence run by the daily task. Its dashboard's Generate button runs in the page and needs no task; re-pinning is a `launch-watch` run, so nothing for it is recorded in `schedule.companion_tasks`. If a future member's registry row declares a distinct native time, offer a second task `daily-digest-conductor-<member>` at that time, record it in `schedule.companion_tasks`, and register it only when a scheduler exists.
 
 Keep companion tasks minimal. Weekly cadences are handled by the daily task's gating, not by separate tasks. Without a scheduler, the user can ask for that member by hand.
 

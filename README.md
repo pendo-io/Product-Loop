@@ -133,7 +133,7 @@ Know if it landed.
 
 | Skill | What it does |
 |---|---|
-| [`launch-watch`](./launch-watch/) | Weekly launch health check: adoption curve, guide engagement, funnel, and sentiment, as a shareable dashboard where the surface supports one, otherwise an HTML file or text block |
+| [`launch-watch`](./launch-watch/) | Weekly launch health check: adoption curve, guide engagement, funnel, friction, and sentiment, as a shareable dashboard where the surface supports one, otherwise an HTML file or text block |
 | `bug-watch` | Daily post-launch issue monitor — errors, regressions, support ticket spikes (coming soon) |
 | `exec-brief` | Exec-ready summary of a launch or feature — one paragraph, the numbers that matter (coming soon) |
 
