@@ -165,7 +165,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" integrity="sha512-WoViKhKD4qI2WruSZqv9+kvM4WfFhUMQCLN4QlDTt5aU56fLQy2gYoxWIqlEnXqJy/+Ac5q/hk1oWfqnMDhwMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 // CONFIG: fill from Step 1 and setup. subscriptionId = the Pendo subscription the data belongs to;
-// pendoHost = the host you sign in to Pendo on (region-specific), without https://; mcpServer = the
+// pendoHost = the host you sign in to Pendo on (region-specific), without https:// or a port; mcpServer = the
 // Pendo connector's display name as the publish result reports it (for example "Pendo"), used for
 // in-page refresh only, or "" to publish without it.
 // rateUnit = the unit guideUsage states for completionRate/dismissalRate, read from the tool's response
@@ -181,6 +181,8 @@
 // funnel:{ name:"Guide seen to feature used", stepNames:["Saw the launch guide","Used the feature"],
 //   args:{ steps:[{kind:"guide",id:"<guideId>",eventType:"guideSeen"},{kind:"feature",id:"<featureId>"}], appId:"<appId>" } }.
 // Generate re-runs it; leave `funnel` out when the pin ran no queryFunnel (a stand-in is never re-run).
+// CONFIG, SNAPSHOT and HISTORY are written as JSON with every "<" escaped as \u003c (see SKILL.md),
+// so a quote or name containing a closing script tag can't end this block.
 const CONFIG = { subscriptionId:"{{SUBSCRIPTION_ID}}", pendoHost:"{{PENDO_HOST}}", mcpServer:"{{PENDO_MCP_SERVER}}", appId:"{{APP_ID}}", launchDate:"{{LAUNCH_DATE_ISO}}", rateUnit:"{{RATE_UNIT}}",
   launches:[ { key:"l1", name:"{{FEATURE_NAME}}", launchDate:"{{LAUNCH_DATE_ISO}}", entities:[ /* {type,id,name,appId?} */ ],
     targets:[ /* {metric:"New accounts per week", target:"20 by week 4", status:"latest complete week: 22, met"} - from setup; target is the goal only, status is where it stands on the pin; leave empty if the user has none */ ] } ] };
@@ -320,7 +322,7 @@ function deadPer100(type,s){ const ev=Number(s.totalNumEvents)||0; return (type!
 // Average time per visitor on a page: aggregateEntityUsage's avgTimePerVisitor is in minutes, shown to one
 // decimal ("4.9 min"); a positive value under 0.05 shows "<0.1 min". Share of a funnel: one decimal, "<0.1%" when positive but smaller.
 function minText(v){ const n=Number(v); if(v==null||!isFinite(n)) return "-"; return (n>0&&n<0.05)?"<0.1 min":((Math.round(n*10)/10)+" min"); }
-function pctText(x){ return x===0?"0%":(x<0.001?"<0.1%":((Math.round(x*1000)/10)+"%")); }
+function pctText(x){ return x===0?"0%":(x<0.0005?"<0.1%":((Math.round(x*1000)/10)+"%")); }
 function deadText(type,n){ return n==null?"-":(n+" per 100 "+(type==="page"?"views":"clicks")); }
 // A tool-level failure rejects. Each live call gets RETRY.tries attempts before fetchLive counts it
 // as failed. getFeedbackItems with similaritySearchTerms rejects with "no relevant insights" when the
@@ -426,7 +428,7 @@ async function fetchLive(){
       }catch(e){ gap("aggregateEntityUsage","aggregateEntityUsage (weekly active, "+en.name+")"); r={ entity:en.name, unavailable:failedMsg("aggregateEntityUsage") }; } }
       wkCache[en.id]=r; return r; };
     if(primary){
-      const own=base.targets.filter(x=>x.entityId);
+      const own=base.targets.filter(x=>x.entityId&&WEEKLY_ACTIVE.test(x.metric||""));
       // The first usage entity is measured only for a weekly active target without its own entity.
       if(base.targets.some(t=>!t.entityId&&WEEKLY_ACTIVE.test(t.metric||""))) weekly=await weeklyFor(primary);
       for(const t of own){ const en=usage.find(e=>e.id===t.entityId);
@@ -558,10 +560,11 @@ function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;"
 // 10.x, 192.168.x, a bare name) is refused, so a shared page can never point at someone's machine.
 function pHost(){ if(!isSet(CONFIG.pendoHost)) return ""; const h=String(CONFIG.pendoHost).trim().replace(/^https?:\/\//i,"").split(/[\/?#]/)[0].toLowerCase();
   return (!h || h.indexOf(".")<0 || /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[)/.test(h) || /\.local$/.test(h)) ? "" : h; }
-function safeUrl(u){ return /^https:\/\/[^\/]+\.[^\/]+/i.test(String(u||"")) ? String(u) : ""; }
+// A link is kept only when its host is exactly CONFIG.pendoHost (every link the skill builds is a Pendo deep link).
+function safeUrl(u){ const s=String(u||""), m=/^https:\/\/([^\/?#:@\\]+)(?=[\/?#]|$)/i.exec(s), h=pHost(); return (m&&h&&m[1].toLowerCase()===h)?s:""; }
 function pUrl(kind,id){ if(!id || !pHost() || !isSet(CONFIG.subscriptionId)) return ""; var sid=encodeURIComponent(CONFIG.subscriptionId), eid=encodeURIComponent(id); var base="https://"+pHost()+"/s/"+sid; if(kind==="feedback") return base+"/listen/validate?openItem="+eid; var m={guide:"/guides/",page:"/pages/",feature:"/features/",object:"/objects/",trackEvent:"/trackevents/"}; return base+(m[kind]||"/pages/")+eid; }
 function kindLabel(k){ return ({page:"page",feature:"feature",guide:"guide",trackEvent:"track event",object:"object"})[k]||"source"; }
-function lnk(url,label){ url=safeUrl(url); return url?('<a class="lw-link" href="'+esc(url)+'" target="_blank" rel="noopener">'+label+' <span class="lw-ext">&#8599;</span></a>'):label; }
+function lnk(url,label){ url=safeUrl(url); return url?('<a class="lw-link" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+label+' <span class="lw-ext">&#8599;</span></a>'):label; }
 function hasTargets(d){ return !!d && Array.isArray(d.targets) && d.targets.length>0; }
 // Status color only when the launch has targets; otherwise (or on an unknown level) neutral.
 function levelOf(d){ const lv=d&&d.read&&d.read.level; return (hasTargets(d) && ["green","amber","red"].indexOf(lv)>=0) ? lv : "none"; }
@@ -624,7 +627,7 @@ function render(data,key){
     else S("lw-friction", '<div class="lw-empty">No signal yet: no friction data for the surfaces in scope.</div>'); }catch(e){}
   try{ const sp=document.getElementById("lw-sentiment-panel"); sp.style.display="";
     const th=d.themes||[]; S("lw-themes", th.length?('<div class="lw-sublabel">Themes</div>'+th.map(x=>`<div class="lw-theme"><b>${esc(x.name)}</b> <span class="cnt">(${esc(x.count)})</span> &mdash; ${esc(x.description)}</div>`).join("")):"");
-    const s=d.sentiment||[]; const notes=[d.sentimentNote,d.sentimentLive].filter(Boolean).map(t=>`<div class="lw-sub2">${esc(t)}</div>`).join(""); S("lw-sentiment", (s.length?('<div class="lw-sublabel" style="margin-top:12px">Representative feedback</div>'+s.map(x=>`<div class="lw-fb">${esc(x.text)}<span class="src">${esc(x.source||'feedback')}</span>${safeUrl(x.url)?(' <a class="lw-src-link" href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener">&#8599;</a>'):''}</div>`).join("")):(th.length?"":(d.sentimentChecked===false?'<div class="lw-empty">Listen feedback was not checked for this snapshot.</div>':'<div class="lw-empty">No sentiment signal for this launch yet.</div>')))+notes); }catch(e){}
+    const s=d.sentiment||[]; const notes=[d.sentimentNote,d.sentimentLive].filter(Boolean).map(t=>`<div class="lw-sub2">${esc(t)}</div>`).join(""); S("lw-sentiment", (s.length?('<div class="lw-sublabel" style="margin-top:12px">Representative feedback</div>'+s.map(x=>`<div class="lw-fb">${esc(x.text)}<span class="src">${esc(x.source||'feedback')}</span>${safeUrl(x.url)?(' <a class="lw-src-link" href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener noreferrer">&#8599;</a>'):''}</div>`).join("")):(th.length?"":(d.sentimentChecked===false?'<div class="lw-empty">Listen feedback was not checked for this snapshot.</div>':'<div class="lw-empty">No sentiment signal for this launch yet.</div>')))+notes); }catch(e){}
 }
 
 let CURRENT="l1", CURVIEW=null;
@@ -707,7 +710,7 @@ async function saveFile(blob,name){
   if(location.protocol==="file:"){ downloadBlob(blob,name); return; }
   hint(NO_EXPORT);
 }
-function downloadBlob(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
+function downloadBlob(blob,name){ const a=document.createElement("a"); const u=URL.createObjectURL(blob); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),60000); }
 // Transient viewer UI never goes into an export: the toolbar and the refresh-failed note. The
 // "pinned snapshot" label is left out too, but a local or archived snapshot keeps its label, so an
 // exported file can't pass for the pin.
