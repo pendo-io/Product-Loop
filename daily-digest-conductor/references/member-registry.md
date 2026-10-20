@@ -39,7 +39,7 @@ Producers fold into the composer's existing categories and add no section of the
 
 | Member (public name) | Role it plays | Applies to | Native cadence | Connectors | Output | Default digest bucket |
 | --- | --- | --- | --- | --- | --- | --- |
-| `launch-watch` | Launch-health dashboard | PM/PL (the launches they name) | On demand by default; a weekly re-pin if the user enables it, stored as `weekly-<day>` and run by the conductor's daily task | Pendo MCP; a scheduler only for its own on-demand re-pin task (the dashboard's Generate button) | Re-pins the same dashboard artifact with a new dated snapshot, archives the old one, and posts a one-line read | ✅ Handled (the dashboard link plus its one-line read); not composed into a lens |
+| `launch-watch` | Launch-health dashboard | PM/PL (the launches they name) | On demand by default; a weekly re-pin if the user enables it, stored as `weekly-<day>` and run by the conductor's daily task | Pendo MCP; no scheduler of its own here (the dashboard's Generate button runs in the page and needs no task) | Re-pins the same dashboard artifact with a new dated snapshot, archives the old one, and posts a one-line read | ✅ Handled (the dashboard link plus its one-line read); not composed into a lens |
 
 ### Cadence gating rule
 

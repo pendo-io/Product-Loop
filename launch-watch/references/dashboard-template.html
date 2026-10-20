@@ -3,14 +3,18 @@
   MODEL (see SKILL.md "Output" + "Sharing, refresh & archive"):
    * On load it renders the baked SNAPSHOT ONLY - no connector call - so it opens identically for
      you, a teammate, or a VP who has never touched Pendo. This is the shareable, citable record.
-   * "Generate new pinned snapshot" triggers the re-pin task when one is configured. Without one, it
-     falls back to a live pull, which works only when the surface rendering this page exposes a bridge
-     for calling connector tools (wired in HOST below) and the Pendo connector is present. It re-pulls
+   * "Generate new snapshot" does a live pull, which works only when the surface rendering this page
+     grants it connector calls (wired in HOST below) and the viewer has the Pendo connector. It re-pulls
      the numbers AND re-derives the analysis (HOST.ask), shown clearly as "local (unpinned)", not the
-     pinned snapshot. Re-running the skill is what re-pins (updates this artifact + archives the prior snapshot).
-   * If ANY live call fails (or the analysis cannot be re-derived), the page keeps the pinned snapshot
-     and its original "As of" date, shows "refresh failed: <which call>", and does not re-run the
-     analysis on partial data.
+     pinned snapshot. Re-running the skill is what re-pins (updates this artifact + archives the prior
+     snapshot); the page never re-pins itself.
+   * The page links only to https addresses (its own deep links go to the Pendo host in CONFIG). No control may point
+     at a local server, a file path, or a workspace URL: a shared page must never expose local files.
+   * Each live call is tried up to 3 times. A call that still fails marks only its own section
+     "unavailable" in the new local snapshot (never the pinned value under the new date), the page
+     names it in a "Partial snapshot" note, and the re-derived read is told to leave it out. If no
+     call comes back, or the analysis cannot be re-derived, the page keeps the pinned snapshot and its
+     original "As of" date and shows "refresh failed: <which call>".
    * With no bridge, the page is a static snapshot. That is the default and always works.
    * A missing signal renders as a dash / "no signal yet" - never a fabricated number.
    * The health banner is colored green / amber / red ONLY when the launch has targets (snapshot
@@ -19,6 +23,7 @@
      links are simply omitted.
    KEEP THIS FILE ASCII (entities / \u escapes) so a raw-file snapshot renders anywhere.
 -->
+<title>Launch Watch</title>
 <div id="lw-root">
   <div class="lw-head">
     <div>
@@ -31,7 +36,7 @@
   <div id="lw-tabs" class="lw-tabs"></div>
 
   <div class="lw-bar-row">
-    <button class="lw-btn" id="lw-generate">&#8635; Generate new pinned snapshot</button>
+    <button class="lw-btn" id="lw-generate">&#8635; Generate new snapshot</button>
     <label class="lw-hint" for="lw-history" style="margin-left:4px">History</label>
     <select id="lw-history" class="lw-select" title="View a past snapshot"></select>
     <button class="lw-btn" id="lw-back" style="display:none">&#8592; Current pin</button>
@@ -48,25 +53,37 @@
   </div>
 
   <div id="lw-refresh-note" class="lw-refresh-fail" hidden></div>
+  <div id="lw-missing" class="lw-panel lw-empty" hidden></div>
+  <div id="lw-body">
+  <div id="lw-partial" class="lw-partial" hidden></div>
   <div id="lw-banner" class="lw-banner lw-none"><span class="lw-dot"></span><span id="lw-banner-text">&mdash;</span></div>
   <div class="lw-targets" id="lw-targets"></div>
   <div class="lw-read" id="lw-read-panel"><h3>The read</h3><p id="lw-read"></p></div>
   <div id="lw-cards" class="lw-cards"></div>
 
   <div class="lw-grid">
-    <section class="lw-panel"><h3>Adoption since launch</h3><div id="lw-adoption"></div><div class="lw-caption" id="lw-adopt-cap"></div></section>
+    <section class="lw-panel"><h3>New accounts per week</h3><div id="lw-adoption"></div><div class="lw-caption" id="lw-adopt-cap"></div></section>
     <section class="lw-panel" id="lw-funnel-panel"><h3>Activation funnel</h3><div id="lw-funnel"></div></section>
   </div>
 
   <section class="lw-panel" id="lw-guide-panel"><h3>Guide engagement</h3><div id="lw-guides"></div></section>
   <section class="lw-panel" id="lw-friction-panel"><h3>Friction</h3><div id="lw-friction"></div></section>
   <section class="lw-panel" id="lw-sentiment-panel"><h3>Sentiment &amp; feedback</h3><div id="lw-themes"></div><div id="lw-sentiment"></div></section>
+  </div>
 
   <div class="lw-foot">Data from Pendo &middot; a missing signal shows as &ldquo;no signal yet,&rdquo; never an invented number.</div>
 </div>
 
-<style>
-  :root{--pink:#FF4876;--berry:#2A2359;--ink:#1A1A2E;--muted:#6B7280;--bg:#F6F7FB;--card:#FFFFFF;--line:#E9EAF2;--green:#1FB57A;--amber:#F5A623;--red:#E5484D;--blue:#274690;--shadow:0 1px 2px rgba(26,26,46,.06),0 4px 16px rgba(26,26,46,.06);--radius:14px;--font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+<style id="lw-style">
+  /* .lw-light on #lw-root pins the light tokens; the PDF export uses it, whatever the viewer's theme. */
+  .lw-light,:root{--pink:#FF4876;--berry:#2A2359;--ink:#1A1A2E;--muted:#6B7280;--bg:#F6F7FB;--card:#FFFFFF;--chip:#EFEFF6;--line:#E9EAF2;--grid:#EEEEEE;--green:#1FB57A;--amber:#F5A623;--red:#E5484D;--blue:#274690;
+    --green-bg:#E7F8F1;--green-ink:#0C6B4C;--amber-bg:#FEF4E1;--amber-ink:#8A5A00;--red-bg:#FDECEC;--red-ink:#A11D22;--red-line:#F3B8BA;--blue-bg:#EAF0FF;--blue-line:#9DB2E8;
+    --shadow:0 1px 2px rgba(26,26,46,.06),0 4px 16px rgba(26,26,46,.06);--radius:14px;--font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color-scheme:light dark;}
+  @media (prefers-color-scheme: dark){
+    :root{--pink:#FF6B8F;--berry:#C9C3F2;--ink:#ECECF4;--muted:#9CA3AF;--bg:#14141C;--card:#1E1E2A;--chip:#2A2A38;--line:#30303F;--grid:#2A2A38;--green:#34D399;--amber:#FBBF24;--red:#F87171;--blue:#93B4FF;
+      --green-bg:#0F2E24;--green-ink:#7EE2B8;--amber-bg:#33270C;--amber-ink:#F6D58A;--red-bg:#3A1517;--red-ink:#FCA5A5;--red-line:#6B2A2D;--blue-bg:#1A2440;--blue-line:#3B5291;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);}
+  }
   #lw-root{font-family:var(--font);color:var(--ink);background:var(--bg);padding:20px;max-width:1080px;margin:0 auto;}
   .lw-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:12px;}
   .lw-title{font-size:22px;font-weight:700;letter-spacing:-.01em;}
@@ -75,39 +92,41 @@
   .lw-state{font-size:11px;}
   .lw-state.live{color:var(--blue);font-weight:700;}
   .lw-bar-row{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
-  .lw-btn{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--berry);border-radius:8px;padding:6px 12px;cursor:pointer;box-shadow:var(--shadow);}
+  .lw-btn{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--berry);border-radius:8px;padding:6px 12px;cursor:pointer;box-shadow:var(--shadow);}
   .lw-btn:hover{border-color:var(--pink);color:var(--pink);}
+  .lw-btn[disabled]{opacity:.5;cursor:default;}
   .lw-hint{font-size:12px;color:var(--muted);}
-  .lw-select{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--berry);border-radius:8px;padding:6px 10px;box-shadow:var(--shadow);cursor:pointer;max-width:240px;}
+  .lw-select{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--berry);border-radius:8px;padding:6px 10px;box-shadow:var(--shadow);cursor:pointer;max-width:240px;}
   .lw-split{position:relative;display:inline-flex;}
   .lw-btn-main{border-top-right-radius:0;border-bottom-right-radius:0;}
   .lw-btn-caret{border-top-left-radius:0;border-bottom-left-radius:0;border-left:none;padding:6px 8px;}
-  .lw-menu{position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);z-index:20;min-width:110px;overflow:hidden;}
+  .lw-menu{position:absolute;top:calc(100% + 4px);right:0;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);z-index:20;min-width:110px;overflow:hidden;}
   .lw-menu[hidden]{display:none;}
   .lw-menu-item{padding:7px 12px;font-size:13px;font-weight:600;color:var(--berry);cursor:pointer;}
-  .lw-menu-item:hover{background:#F6F7FB;color:var(--pink);}
-  @media print{ .lw-bar-row,.lw-tabs,.lw-refreshed{display:none!important;} #lw-root{padding:0;max-width:none;background:#fff;} .lw-panel,.lw-card,.lw-read,.lw-banner{box-shadow:none;} }
+  .lw-menu-item:hover{background:var(--bg);color:var(--pink);}
+  @media print{ .lw-bar-row,.lw-tabs,#lw-refresh-note,#lw-state:not(.live){display:none!important;} #lw-root{padding:0;max-width:none;} .lw-panel,.lw-card,.lw-read,.lw-banner{box-shadow:none;} .lw-panel,.lw-card,.lw-read,.lw-banner,.lw-cards{break-inside:avoid;} }
   .lw-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
-  .lw-tab{padding:6px 12px;border-radius:999px;background:#EFEFF6;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;}
-  .lw-tab.active{background:#fff;color:var(--berry);border-color:var(--line);box-shadow:var(--shadow);}
+  .lw-tab{padding:6px 12px;border-radius:999px;background:var(--chip);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;}
+  .lw-tab.active{background:var(--card);color:var(--berry);border-color:var(--line);box-shadow:var(--shadow);}
   .lw-banner{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:var(--radius);font-weight:600;font-size:15px;margin-bottom:14px;box-shadow:var(--shadow);}
   .lw-banner .lw-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
-  .lw-green{background:#E7F8F1;color:#0C6B4C;}.lw-green .lw-dot{background:var(--green);}
-  .lw-amber{background:#FEF4E1;color:#8A5A00;}.lw-amber .lw-dot{background:var(--amber);}
-  .lw-red{background:#FDECEC;color:#A11D22;}.lw-red .lw-dot{background:var(--red);}
-  .lw-none{background:#fff;color:var(--ink);border:1px solid var(--line);}.lw-none .lw-dot{background:var(--muted);}
+  .lw-green{background:var(--green-bg);color:var(--green-ink);}.lw-green .lw-dot{background:var(--green);}
+  .lw-amber{background:var(--amber-bg);color:var(--amber-ink);}.lw-amber .lw-dot{background:var(--amber);}
+  .lw-red{background:var(--red-bg);color:var(--red-ink);}.lw-red .lw-dot{background:var(--red);}
+  .lw-none{background:var(--card);color:var(--ink);border:1px solid var(--line);}.lw-none .lw-dot{background:var(--muted);}
   .lw-banner.has-targets{margin-bottom:6px;}
   .lw-targets{font-size:12px;color:var(--muted);margin:0 0 14px 4px;}
-  .lw-refresh-fail{background:#FDECEC;color:#A11D22;border:1px solid #F3B8BA;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:12px;}
-  .lw-refresh-fail[hidden]{display:none;}
-  .lw-livebar{background:#EAF0FF;color:var(--blue);border:1px dashed #9DB2E8;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:12px;}
-  .lw-read{background:#fff;border:1px solid var(--line);border-left:4px solid var(--pink);border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow);margin-bottom:18px;}
+  .lw-refresh-fail{background:var(--red-bg);color:var(--red-ink);border:1px solid var(--red-line);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:12px;}
+  .lw-partial{background:var(--amber-bg);color:var(--amber-ink);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-bottom:12px;}
+  .lw-refresh-fail[hidden],#lw-missing[hidden],#lw-body[hidden],.lw-partial[hidden]{display:none;}
+  .lw-read{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--pink);border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow);margin-bottom:18px;}
   .lw-read h3{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:.04em;}
   .lw-read p{font-size:14px;line-height:1.55;margin:0;}
   .lw-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:18px;}
   .lw-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
   .lw-card .lbl{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
   .lw-card .val{font-size:24px;font-weight:700;margin-top:6px;color:var(--berry);}
+  .lw-card .val.txt{font-size:15px;line-height:1.3;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
   .lw-card.primary .val{color:var(--pink);}
   .lw-card .sub{font-size:12px;color:var(--muted);margin-top:2px;}
   .lw-card .delta{font-size:12px;font-weight:600;margin-top:4px;}
@@ -116,7 +135,7 @@
   .lw-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px;}
   .lw-panel h3{margin:0 0 12px;font-size:14px;font-weight:700;color:var(--berry);}
   .lw-caption{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.5;}
-  .lw-caveat{font-size:12px;color:#8A5A00;background:#FEF4E1;border-radius:8px;padding:6px 10px;margin-top:10px;display:inline-block;}
+  .lw-caveat{font-size:12px;color:var(--amber-ink);background:var(--amber-bg);border-radius:8px;padding:6px 10px;margin-top:10px;display:inline-block;}
   .lw-funnel-step{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;}
   .lw-bar{height:8px;border-radius:4px;background:var(--pink);margin:2px 0 8px;}
   .lw-th,.lw-guide,.lw-fr{display:grid;grid-template-columns:1.5fr .9fr .9fr .9fr .9fr;gap:8px;align-items:center;font-size:13px;}
@@ -125,11 +144,13 @@
   .lw-guide,.lw-fr{padding:9px 0;border-bottom:1px solid var(--line);}
   .lw-guide .gname,.lw-fr .fname{font-weight:600;}
   .lw-sub2{color:var(--muted);font-size:12px;margin-top:3px;grid-column:1/-1;}
-  .lw-pill{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;background:#EFEFF6;color:var(--muted);margin-left:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.03em;}
-  .lw-pill.warn{background:#FEF4E1;color:#8A5A00;}
-  .lw-note{font-size:13px;background:#F6F7FB;border-radius:8px;padding:8px 10px;margin-top:10px;}
+  .lw-pill{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--chip);color:var(--muted);margin-left:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.03em;}
+  .lw-pill.warn{background:var(--amber-bg);color:var(--amber-ink);}
+  /* A guide whose status could not be read: the amber warning tokens plus an amber outline, so it reads as a warning in light, dark and the light PDF. */
+  .lw-pill.unavail{border:1px solid var(--amber);}
+  .lw-note{font-size:13px;background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:10px;}
   .lw-fb{font-size:13px;padding:8px 0;border-bottom:1px solid var(--line);}
-  .lw-fb .src{font-size:11px;color:var(--muted);background:#EFEFF6;border-radius:6px;padding:1px 6px;margin-left:6px;}
+  .lw-fb .src{display:inline-block;font-size:11px;color:var(--muted);background:var(--chip);border-radius:6px;padding:1px 6px;margin-left:6px;}
   .lw-link{color:inherit;text-decoration:none;border-bottom:1px dashed var(--line);} .lw-link:hover{color:var(--pink);border-bottom-color:var(--pink);}
   .lw-ext{color:var(--muted);font-size:9px;}
   .lw-src-link{color:var(--muted);font-size:11px;text-decoration:none;margin-left:4px;} .lw-src-link:hover{color:var(--pink);}
@@ -141,20 +162,41 @@
   @media(max-width:720px){.lw-grid{grid-template-columns:1fr;}.lw-th,.lw-guide,.lw-fr,.lw-th-fr{grid-template-columns:1.3fr .9fr .9fr;}.lw-th span:nth-child(n+4),.lw-guide span:nth-child(n+4),.lw-fr span:nth-child(n+4){display:none;}}
 </style>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" integrity="sha512-WoViKhKD4qI2WruSZqv9+kvM4WfFhUMQCLN4QlDTt5aU56fLQy2gYoxWIqlEnXqJy/+Ac5q/hk1oWfqnMDhwMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 // CONFIG: fill from Step 1 and setup. subscriptionId = the Pendo subscription the data belongs to;
-// pendoHost = the host you sign in to Pendo on (region-specific), without https://; mcpPrefix = the
-// tool-name prefix your surface uses for the Pendo connector (for example "mcp__<server>__"), or "".
+// pendoHost = the host you sign in to Pendo on (region-specific), without https:// or a port; mcpServer = the
+// Pendo connector's display name as the publish result reports it (for example "Pendo"), used for
+// in-page refresh only, or "" to publish without it.
 // rateUnit = the unit guideUsage states for completionRate/dismissalRate, read from the tool's response
 // or schema: "percent" (8 means 8%), "fraction" (0.08 means 8%), or "" if neither states it.
-const CONFIG = { subscriptionId:"{{SUBSCRIPTION_ID}}", pendoHost:"{{PENDO_HOST}}", mcpPrefix:"{{PENDO_MCP_PREFIX}}", feedbackAreaId:"{{FEEDBACK_AREA_ID}}", appId:"{{APP_ID}}", launchDate:"{{LAUNCH_DATE_ISO}}", repinTaskId:"{{REPIN_TASK_ID}}", rateUnit:"{{RATE_UNIT}}", segmentId:null, window:{current:7,prior:7},
-  launches:[ { key:"l1", name:"{{FEATURE_NAME}}", entities:[ /* {type,id,name} */ ],
-    targets:[ /* {metric:"New accounts per week", target:"20 by week 4"} - from setup; leave empty if the user has none */ ] } ] };
+// A weekly active visitors/accounts target may carry entityId (the page, feature or track event it is measured on,
+// asked at setup when the launch has several); without one it is measured on the launch's first usage entity.
+// Each launch carries its own launchDate (ISO), which drives its refresh window; CONFIG.launchDate is
+// the fallback for a launch without one. An entity in another app than CONFIG.appId carries its own
+// appId ({type,id,name,appId}); acquisitionTrend is scoped to one app and reads 0 in the wrong one.
+// A launch with a guide and a page, feature or track event also carries `funnel`: {name, stepNames, args}
+// when the pin ran queryFunnel. args are the exact queryFunnel arguments of the pin except subId and
+// dateRange (the page sets those: the launch date to today), for example
+// funnel:{ name:"Guide seen to feature used", stepNames:["Saw the launch guide","Used the feature"],
+//   args:{ steps:[{kind:"guide",id:"<guideId>",eventType:"guideSeen"},{kind:"feature",id:"<featureId>"}], appId:"<appId>" } }.
+// Generate re-runs it; leave `funnel` out when the pin ran no queryFunnel (a stand-in is never re-run).
+// CONFIG, SNAPSHOT and HISTORY are written as JSON with every "<" escaped as \u003c (see SKILL.md),
+// so a quote or name containing a closing script tag can't end this block.
+const CONFIG = { subscriptionId:"{{SUBSCRIPTION_ID}}", pendoHost:"{{PENDO_HOST}}", mcpServer:"{{PENDO_MCP_SERVER}}", appId:"{{APP_ID}}", launchDate:"{{LAUNCH_DATE_ISO}}", rateUnit:"{{RATE_UNIT}}",
+  launches:[ { key:"l1", name:"{{FEATURE_NAME}}", launchDate:"{{LAUNCH_DATE_ISO}}", entities:[ /* {type,id,name,appId?} */ ],
+    targets:[ /* {metric:"New accounts per week", target:"20 by week 4", status:"latest complete week: 22, met"} - from setup; target is the goal only, status is where it stands on the pin; leave empty if the user has none */ ] } ] };
 
-// ---- PINNED SNAPSHOT (frozen record). DEMO DATA ONLY: an invented "Calendar Sync" launch in a
-// fictional work-tracking app, so the page renders on first open. Replace it with THIS run's data.
-// In real data, asOf and launchDate are ISO dates (YYYY-MM-DD); the demo uses plain labels. ----
+// ---- PINNED SNAPSHOT (frozen record). Ships with placeholder data so the page renders on first
+// open; replace all of it with THIS run's data and delete this sentence.
+// asOf and launchDate are ISO dates (YYYY-MM-DD); pinnedAt is the ISO time of the pin, so two pins on
+// the same day read apart in History. A section that does not apply (adoption and friction for a launch
+// with no page, feature or track event) carries `notInScope:"<why>"`. A section that could not be checked carries
+// `unavailable:"<why>"` (for example funnel:{steps:[],unavailable:"queryFunnel timed out"}); sentiment
+// carries sentimentChecked:false when Listen was not checked, so the page says so instead of
+// "no sentiment signal", and sentimentNote:"<n> call items without a usable quote, transcript not
+// checked" when call-sourced items were left out. Guide status takes the API state; the page shows
+// the Pendo UI label. ----
 const SNAPSHOT = {
   asOf:"demo week 6",
   l1:{
@@ -162,25 +204,25 @@ const SNAPSHOT = {
     targets:[ {metric:"New accounts per week", target:"30 by week 6"}, {metric:"Connect to first sync", target:"60%"} ],
     read:{ level:"green",
       verdict:"Landing well: adoption stepped up after the setup walkthrough and both targets are met, with one friction spot on reconnecting.",
-      narrative:"Calendar Sync is landing well after a slow start. New accounts stayed near ten a week until the setup walkthrough went live in week 4, then climbed to 34 in the latest week, so the 30-a-week target is met. Connect to first sync is 64%, above the 60% target, and the biggest drop is at the access-grant step rather than the sync itself. The thing to watch is reconnecting: rage clicks on the settings page roughly doubled in two weeks and the top feedback theme is a reconnect loop, and most of those clicks follow an error message, so this looks like a reconnect failure to raise with engineering rather than user impatience. The new help tooltip there is too young to judge." },
+      narrative:"Calendar Sync is landing well after a slow start. New accounts stayed near ten a week until the setup walkthrough went live in week 4, then climbed to 34 in the latest week, so the 30-a-week target is met. Connect to first sync is 64%, above the 60% target, and the biggest drop is at the access-grant step rather than the sync itself. The thing to watch is reconnecting: rage clicks on the settings page rose by about half in two weeks and the top feedback theme is a reconnect loop, and most of those clicks follow an error message, so this looks like a reconnect failure to raise with engineering rather than user impatience. The new help tooltip there is too young to judge." },
     cards:[
-      {label:"Accounts adopted", value:"111", sub:"since launch", primary:true},
-      {label:"Latest week", value:"34", prev:"27", goodUp:true, sub:"new accts (latest week)"},
-      {label:"Connect to first sync", value:"64%", sub:"212 of 331 synced"},
-      {label:"Guide completion", value:"38.2%", sub:"setup walkthrough"},
-      {label:"Friction hotspot", value:"Settings pg", sub:"146 rage clicks"}
+      {label:"New accounts, 8 wks", value:"111", sub:"first use, weeks of Feb 23 - Apr 19", primary:true},
+      {label:"New accts, latest wk", value:"34", prev:"27", goodUp:true, sub:"week of Apr 13 - Apr 19"},
+      {label:"Launch guide completion", value:"38.2%", sub:"Calendar Sync setup walkthrough, 1,240 views since launch"},
+      {label:"Friction hotspot", value:"Calendar settings page", sub:"9 dead clicks per 100 views"},
+      {label:"Connect to first sync", value:"64%", sub:"funnel, 212 of 331 completed every step"}
     ],
-    adoption:{ weeks:["Wk 1","Wk 2","Wk 3","Wk 4","Wk 5","Wk 6"], newAccounts:[6,9,11,24,27,34],
+    adoption:{ weeks:["Feb 23","Mar 2","Mar 9","Mar 16","Mar 23","Mar 30","Apr 6","Apr 13"], newAccounts:[0,0,6,9,11,24,27,34],
       caption:"Slow for three weeks (under a dozen a week), then a step up once the setup walkthrough went live in week 4. Still climbing at week 6." },
     guides:[
-      {name:"Calendar Sync setup walkthrough", status:"Active", views:"1,240", visitors:"910", completion:"38.2%", dismissal:"14.5%", read:"Went live in week 4; the step up in new accounts lines up with it."},
-      {name:"Reconnect help tooltip", status:"New this week", views:"85", visitors:"70", completion:"-", dismissal:"22.4%", read:"Added on the settings page after the reconnect complaints. Too early to read."}
+      {name:"Calendar Sync setup walkthrough", status:"public", views:"1,240", visitors:"910", completion:"38.2%", dismissal:"14.5%", read:"Went live in week 4; the step up in new accounts lines up with it."},
+      {name:"Reconnect help tooltip", status:"staged", views:"85", visitors:"70", completion:"-", dismissal:"22.4%", read:"Added on the settings page after the reconnect complaints. Too early to read."}
     ],
     funnel:{ steps:[{step:'Opened "Connect calendar"', n:331},{step:'Granted calendar access', n:268},{step:'First sync completed', n:212}], conversion:"64%",
       caveat:"" },
     friction:{ surfaces:[
-        {name:"Calendar settings page", visitors:"1,020", dead:"~9%", rage:"146", uturns:"88", dwell:"2.1 min", note:"Most rage clicks land on Reconnect, right after an error message, so it reads as a failing reconnect rather than impatience."},
-        {name:"Workload View (synced events)", visitors:"2,480", dead:"~3%", rage:"21", uturns:"40", dwell:"6.4 min", note:""}
+        {name:"Calendar settings page", visitors:"1,020", dead:"9 per 100 views", deadPer100:9, rage:"146", uturns:"88", dwell:"2.1 min", note:"Most rage clicks land on Reconnect, right after an error message, so it reads as a failing reconnect rather than impatience."},
+        {name:"Workload View (synced events)", visitors:"2,480", dead:"3 per 100 views", deadPer100:3, rage:"21", uturns:"40", dwell:"6.4 min", note:""}
       ],
       summary:"Synced events read cleanly in Workload View; the friction is in reconnecting a calendar, not in using the synced one." },
     themes:[
@@ -195,43 +237,48 @@ const SNAPSHOT = {
 };
 
 // ---- HISTORY: prior pinned snapshots (agent appends one here on every re-pin) --
-// Each entry is a full snapshot for one "As of" date. DEMO DATA ONLY (the invented week before).
+// Each entry is a full snapshot for one "As of" date. Ships with placeholder data; replace it with
+// this launch's prior pins ([] on the first pin) and delete this sentence.
 const HISTORY = [
   { asOf:"demo week 5", l1:{
     name:"Example: Calendar Sync (GA)", launchDate:"(demo launch)", weekN:5,
     targets:[ {metric:"New accounts per week", target:"30 by week 6"}, {metric:"Connect to first sync", target:"60%"} ],
     read:{ level:"amber", verdict:"Picking up after the walkthrough but still under the weekly adoption target; conversion is on target.",
       narrative:"The setup walkthrough is working: new accounts more than doubled once it went live and held up in week 5, but 27 is still short of the 30-a-week target. Connect to first sync is 61%, just over target. Reconnect rage clicks are starting to show on the settings page; worth watching next week." },
-    cards:[ {label:"Accounts adopted", value:"77", sub:"since launch", primary:true},
-      {label:"Latest week", value:"27", prev:"24", goodUp:true, sub:"new accts (latest week)"},
-      {label:"Connect to first sync", value:"61%", sub:"171 of 280 synced"},
-      {label:"Guide completion", value:"35.0%", sub:"setup walkthrough"},
-      {label:"Friction hotspot", value:"Settings pg", sub:"92 rage clicks"} ],
-    adoption:{ weeks:["Wk 1","Wk 2","Wk 3","Wk 4","Wk 5"], newAccounts:[6,9,11,24,27],
+    cards:[ {label:"New accounts, 8 wks", value:"77", sub:"first use, weeks of Feb 16 - Apr 12", primary:true},
+      {label:"New accts, latest wk", value:"27", prev:"24", goodUp:true, sub:"week of Apr 6 - Apr 12"},
+      {label:"Launch guide completion", value:"35.0%", sub:"Calendar Sync setup walkthrough, 690 views since launch"},
+      {label:"Friction hotspot", value:"Calendar settings page", sub:"7 dead clicks per 100 views"},
+      {label:"Connect to first sync", value:"61%", sub:"funnel, 171 of 280 completed every step"} ],
+    adoption:{ weeks:["Feb 16","Feb 23","Mar 2","Mar 9","Mar 16","Mar 23","Mar 30","Apr 6"], newAccounts:[0,0,0,6,9,11,24,27],
       caption:"Flat for three weeks, then a step up with the week 4 walkthrough. Two weeks of the new level so far." },
-    guides:[ {name:"Calendar Sync setup walkthrough", status:"Active", views:"690", visitors:"520", completion:"35.0%", dismissal:"16.2%", read:"Driving most new setups since it went live."} ],
+    guides:[ {name:"Calendar Sync setup walkthrough", status:"public", views:"690", visitors:"520", completion:"35.0%", dismissal:"16.2%", read:"Driving most new setups since it went live."} ],
     funnel:{ steps:[{step:'Opened "Connect calendar"', n:280},{step:'Granted calendar access', n:226},{step:'First sync completed', n:171}], conversion:"61%", caveat:"" },
-    friction:{ surfaces:[ {name:"Calendar settings page", visitors:"760", dead:"~7%", rage:"92", uturns:"61", dwell:"2.3 min", note:"Rage clicks cluster on Reconnect."},
-      {name:"Workload View (synced events)", visitors:"1,830", dead:"~3%", rage:"17", uturns:"32", dwell:"6.1 min", note:""} ],
+    friction:{ surfaces:[ {name:"Calendar settings page", visitors:"760", dead:"7 per 100 views", deadPer100:7, rage:"92", uturns:"61", dwell:"2.3 min", note:"Rage clicks cluster on Reconnect."},
+      {name:"Workload View (synced events)", visitors:"1,830", dead:"3 per 100 views", deadPer100:3, rage:"17", uturns:"32", dwell:"6.1 min", note:""} ],
       summary:"Using synced events is smooth; reconnecting is where friction is starting." },
     themes:[ {name:"Reconnect loop", description:"People asked to reconnect their calendar more than once.", count:4} ],
     sentiment:[] } }
 ];
 
-// ---- LIVE REFRESH: re-pull numbers + RE-DERIVE the analysis via HOST.ask -----
-// ---- HOST BRIDGE: map your surface's artifact runtime here --------------------
-// Some surfaces that render HTML artifacts let the page call connector tools, ask Claude, or run a
-// scheduled task. Map those functions here. Leave any you don't have as null; the page degrades to
-// the pinned snapshot. One known bridge is detected below as an example (window.cowork, the page runtime in Claude's
-// Cowork surface); add others the same way.
-const HOST = (function(){
-  const b = (typeof window!=="undefined" && window.cowork) ? window.cowork : null;
-  return {
-    callTool: b && b.callMcpTool ? (n,a)=>b.callMcpTool(n,a) : null,
-    ask:      b && b.askClaude   ? (p,d)=>b.askClaude(p,d)   : null,
-    runTask:  b && b.runScheduledTask ? (id)=>b.runScheduledTask(id) : null
-  };
-})();
+// ---- HOST BRIDGE: the surface's page runtime ---------------------------------
+// Where pages reach capabilities through claude.use(name) (Claude artifacts, including Cowork), the page
+// asks for "mcp" (Pendo calls; declared at publish, only if the PM wants in-page refresh), "sample"
+// (the re-derived read) and "downloads" (exports). Each resolves later, or null when this view can't
+// run it, so the page renders the pinned snapshot first and lights these up when they arrive. A page
+// can't run a scheduled task, so it never re-pins itself. Other surfaces: map their functions here.
+const HOST = { ready:false, callTool:null, ask:null, save:null };
+async function initHost(){
+  const c=(typeof window!=="undefined"&&window.claude&&typeof window.claude.use==="function")?window.claude:null;
+  if(c){
+    const get=async(n)=>{ try{ return await c.use(n); }catch(e){ return null; } };
+    const [m,smp,dl]=await Promise.all([ isSet(CONFIG.mcpServer)?get("mcp"):Promise.resolve(null), get("sample"), get("downloads") ]);
+    if(m) HOST.callTool=async(tool,args)=>{ const r=await m.callTool(CONFIG.mcpServer,tool,args); return r.payload; };
+    if(smp) HOST.ask=(prompt)=>smp.json(prompt);
+    if(dl) HOST.save=(filename,data)=>dl.save({filename:filename,data:data});
+  }
+  HOST.ready=true;
+}
 function isSet(v){ return !!v && String(v).indexOf("{{")<0; }
 // Guide rates: the unit comes from CONFIG.rateUnit (read from the tool response or schema), never
 // from the size of the value. If the unit is unset, show the raw number labeled "unit unclear".
@@ -239,182 +286,371 @@ function ratePct(r){ const n=Number(r); if(!isFinite(n)) return "-"; const u=isS
   if(u==="percent") return (Math.round(n*10)/10)+"%";
   if(u==="fraction") return (Math.round(n*1000)/10)+"%";
   return n+" (unit unclear)"; }
-function P(n){ return (isSet(CONFIG.mcpPrefix)?CONFIG.mcpPrefix:"")+n; }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
-async function mcp(name,args){ const r=await HOST.callTool(P(name),args); if(r.isError) throw new Error(name); return r.structuredContent ?? JSON.parse(r.content[0].text); }
+function addDaysISO(iso,n){ const d=new Date(iso+"T00:00:00Z"); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function daysISO(a,b){ return Math.round((Date.parse(b+"T00:00:00Z")-Date.parse(a+"T00:00:00Z"))/864e5); }
+const ISO_DATE=/^\d{4}-\d{2}-\d{2}$/;
+// "Week N since launch": the launch date is day 1 of week 1, so N = floor(days since launch / 7) + 1.
+function weekNOf(launch,asOf){ if(!ISO_DATE.test(String(launch||""))||!ISO_DATE.test(String(asOf||""))) return null; const d=daysISO(launch,asOf); return d<0?null:Math.floor(d/7)+1; }
+// Adoption: acquisitionTrend (periodType week) returns only COMPLETE weeks (the week in progress is left
+// out) and OMITS a week with no new accounts, labelling each "<Mon> <D> - <Mon> <D>" without a year. So the
+// series is rebuilt as ADOPT_WEEKS contiguous weeks ending at the last complete week, with 0 for an
+// omitted week; otherwise the "latest week" could silently be an older one. If the labels can't be
+// placed on one 7-day grid, the weeks are kept as returned (fill:false).
+const ADOPT_WEEKS=8;
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function mdISO(s,notAfter){ const m=/^([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{1,2})$/.exec(String(s||"").trim()); if(!m) return null;
+  const mi=MON.indexOf(m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase()); if(mi<0) return null;
+  let y=Number(notAfter.slice(0,4)); const mk=yy=>yy+"-"+String(mi+1).padStart(2,"0")+"-"+String(Number(m[2])).padStart(2,"0");
+  return mk(y)>notAfter?mk(y-1):mk(y); }
+function mdLabel(iso){ return MON[Number(iso.slice(5,7))-1]+" "+Number(iso.slice(8,10)); }
+function adoptionWeeks(acq,today){
+  // lastStart/lastEnd are the ISO dates of the last of the weeks (null when the labels can't be placed on
+  // the 7-day grid or the call returned no weeks); the weekly active count is measured over them.
+  const lab=c=>String(c.cohortLabel||""), raw={ fill:false, lastStart:null, lastEnd:null, starts:acq.map(c=>lab(c).split(" - ")[0]), spans:acq.map(lab), counts:acq.map(c=>Number(c.newCount)||0) };
+  if(!acq.length) return { fill:true, lastStart:null, lastEnd:null, starts:[], spans:[], counts:[] };
+  const ends=acq.map(c=>mdISO(lab(c).split(" - ")[1],addDaysISO(today,-1)));
+  if(ends.some(e=>!e)) return raw;
+  let E=ends[ends.length-1]; while(addDaysISO(E,7)<today) E=addDaysISO(E,7);
+  const out={ fill:true, starts:[], spans:[], counts:[], lastStart:addDaysISO(E,-6), lastEnd:E }, at={};
+  for(let i=ADOPT_WEEKS-1;i>=0;i--){ const e=addDaysISO(E,-7*i), s=addDaysISO(e,-6); at[e]=out.counts.length; out.starts.push(mdLabel(s)); out.spans.push(mdLabel(s)+" - "+mdLabel(e)); out.counts.push(0); }
+  for(let j=0;j<acq.length;j++){ if(!(ends[j] in at)) return raw; out.counts[at[ends[j]]]=Number(acq[j].newCount)||0; }
+  return out; }
+// Friction: dead clicks per 100 events (page views for a page, clicks for a feature). Not a percent: on
+// a page it can pass 100. One decimal. Track events carry no frustration counts.
+function deadPer100(type,s){ const ev=Number(s.totalNumEvents)||0; return (type!=="trackEvent"&&ev&&s.totalDeadClickCount!=null)?Math.round(s.totalDeadClickCount/ev*1000)/10:null; }
+// Average time per visitor on a page: aggregateEntityUsage's avgTimePerVisitor is in minutes, shown to one
+// decimal ("4.9 min"); a positive value under 0.05 shows "<0.1 min". Share of a funnel: one decimal, "<0.1%" when positive but smaller.
+function minText(v){ const n=Number(v); if(v==null||!isFinite(n)) return "-"; return (n>0&&n<0.05)?"<0.1 min":((Math.round(n*10)/10)+" min"); }
+function pctText(x){ return x===0?"0%":(x<0.0005?"<0.1%":((Math.round(x*1000)/10)+"%")); }
+function deadText(type,n){ return n==null?"-":(n+" per 100 "+(type==="page"?"views":"clicks")); }
+// A tool-level failure rejects. Each live call gets RETRY.tries attempts before fetchLive counts it
+// as failed. getFeedbackItems with similaritySearchTerms rejects with "no relevant insights" when the
+// window holds no matching item; that is an empty result (0 new items), not a failure, and only that
+// message is read that way.
+const RETRY={ tries:3, waitMs:800 };
+const NO_MATCH=/no relevant insights/i;
+const NO_GUIDE=/not found/i;
+// A weekly active visitors/accounts/users target (by its metric name): the only target the weekly active call serves.
+const WEEKLY_ACTIVE=/(?=.*active)(?=.*(visitor|account|user))/i;
+function errText(e){ try{ return String((e&&(e.message||e.error))||e||""); }catch(x){ return ""; } }
+async function mcp(name,args){
+  let last;
+  for(let i=0;i<RETRY.tries;i++){
+    try{ const p=await HOST.callTool(name,args); return typeof p==="string"?JSON.parse(p):p; }
+    catch(e){ last=e; if(name==="getFeedbackItems"&&NO_MATCH.test(errText(e))) return { data:[] };
+      // listGuides says 'Guide "<id>" not found' for an id it doesn't know: no state to show, not a failed call.
+      if(name==="listGuides"&&NO_GUIDE.test(errText(e))) return {};
+      if(i<RETRY.tries-1) await new Promise(r=>setTimeout(r,RETRY.waitMs*(i+1))); }
+  }
+  throw last;
+}
+function failedMsg(call){ return call+" failed after "+RETRY.tries+" tries"; }
 async function reanalyze(numbers, launchName){
   if(!HOST.ask) return null;
   const prompt = 'You are the launch-watch analyst. From these Pendo metrics for the launch "'+launchName+'", '
     + 'return ONLY JSON: {level, verdict, narrative, adoptionCaption, guideReads:{name:read}, frictionNotes:{name:note}}. '
-    + 'level is green|amber|red judged ONLY against numbers.targets; if targets is empty, level is "none". verdict <=1 sentence. narrative 2-4 sentences that CATCH whether it looks adopted but is in trouble '
+    + 'level is green|amber|red judged ONLY against numbers.targets; if targets is empty, level is "none". '
+    + 'numbers.adoption.newAccounts are COMPLETE weeks (numbers.adoption.spans gives their dates; the week in progress is not included), so the "New accts, latest wk" card is a full week of accounts using the launch for the FIRST time. Judge only a new-accounts-per-week target against it. A target for weekly active visitors or accounts is a different measure: judge it only from the visitors and accounts active in the last complete week, taken from its entry in numbers.targetWeekly (matched by metric) when it has one, otherwise from numbers.weeklyActive (the first usage entity of the launch); name the entity, the dates (weekOf) and the number in the narrative, and if that entry is missing or has unavailable, name that target as not judged. '
+    + 'numbers.targets are goals only; ignore any measured value, week or met/missed written into a target, because it comes from the pin. '
+    + 'Judge each target only from a number given here; name in the narrative any target you could not judge (for example a funnel target when numbers.funnel is unavailable or has no steps); if no target can be judged, level is "none". numbers.funnel.steps is the activation funnel for the window since launch (visitors per step, in order); a funnel target is judged against its conversion. '
+    + 'verdict <=1 sentence. narrative 3-5 sentences of interpretation only, '
+    + 'without restating the verdict or the card values: what the numbers mean together and whether it looks adopted but is in trouble '
     + '(guide views without completion, a funnel step most people stop at, frustration rising per visitor, a guide that stopped showing, usage concentrated in a few accounts). '
-    + 'Base every claim on the numbers; if a signal is missing say so; never invent numbers.';
-  try{ const r=await HOST.ask(prompt,[numbers]); const txt=typeof r==="string"?r:(r.text||r.content||JSON.stringify(r)); return JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}")+1)); }
+    + 'Base every claim on the numbers; if a signal is missing say so; never invent numbers. '
+    + 'numbers.unavailable lists the sections this refresh could not pull: say in the narrative that they are unavailable, and draw no conclusion from them. '
+    + 'A section with notInScope does not apply to this launch (for example adoption and friction when it has no page, feature or track event), and a funnel with no steps and no unavailable means the launch has no funnel (it needs a guide and a page or feature): neither is a gap, so do not call it unavailable or missing.';
+  // A read without a verdict and a narrative is a failed analysis, not a re-derived one.
+  const txt=v=>typeof v==="string"&&v.trim().length>0;
+  try{ const r=await HOST.ask(prompt+"\nMetrics JSON: "+JSON.stringify(numbers)); return (r&&typeof r==="object"&&txt(r.verdict)&&txt(r.narrative))?r:null; }
   catch(e){ return null; }
 }
-// Call-sourced feedback check. A call item is kept only when it carries a usable quote:
-// at least CALL_MIN_WORDS words once the opening pleasantry is removed. The opening pleasantry is
-// every clause before the first one that names this launch (a term from its name, entity names,
-// or theme names). No fixed greeting list: an item that never gets to the launch is all opener.
-const CALL_MIN_WORDS=8;
-function isCallSource(src){ return /call|meeting|transcript|recording|gong|chorus|zoom/i.test(src); }
-function wordsOf(t){ return String(t||"").toLowerCase().match(/[a-z0-9']+/g)||[]; }
-function launchTerms(L, base){
-  const t=new Set(), add=(x)=>wordsOf(x).forEach(w=>{ if(w.length>=4) t.add(w); });
-  add(L.name); add(base&&base.name); (L.entities||[]).forEach(e=>add(e.name)); ((base&&base.themes)||[]).forEach(x=>add(x.name));
-  return t;
-}
-function callHasQuote(text, terms){
-  const clauses=String(text||"").split(/[.,;:!?\u2013\u2014]+|\s-\s/).map(c=>wordsOf(c)).filter(c=>c.length);
-  let j=0; while(j<clauses.length&&!clauses[j].some(w=>terms.has(w))) j++;
-  const rest=[].concat(...clauses.slice(j));
-  return rest.length>=CALL_MIN_WORDS;
-}
-// Returns {ok:true, data} only when every live call succeeded and the analysis was re-derived.
-// On ANY failed call it returns {ok:false, failed:[...]} without re-running the analysis, so the
-// caller keeps the pinned snapshot and its original "As of" date rather than mixing old and new.
+// ---- LIVE REFRESH: re-pull numbers + RE-DERIVE the analysis via HOST.ask -----
+// Returns {ok:true, data} when at least one launch got a live call through and its read was
+// re-derived. A call that still fails after its retries marks only its own section unavailable
+// (never the pinned value under the new date); the launch's `partial` lists those sections and the
+// re-derived read is told about them. A launch whose every call failed is left out of data and its
+// calls go in `failed`. If the read can't be re-derived, it returns {ok:false} and nothing is saved.
 async function fetchLive(){
   if(!HOST.callTool) return { ok:false, failed:["no connector bridge (HOST.callTool)"] };
-  const dr={type:"absolute",startDate:CONFIG.launchDate,endDate:todayISO()};
   const out={ asOf: todayISO() };
-  const failed=[]; const fail=(call)=>{ failed.push(call); };
+  const failed=[], failedBy={}, noUsageCalls=[]; let any=false;
   for(const L of CONFIG.launches){
-    const base=JSON.parse(JSON.stringify(SNAPSHOT[L.key]));
-    if(Array.isArray(L.targets)&&L.targets.length) base.targets=L.targets;
+    // Each launch refreshes from its own launch date; CONFIG.launchDate is the fallback.
+    const ld=isSet(L.launchDate)?L.launchDate:CONFIG.launchDate;
+    const dr={type:"absolute",startDate:ld,endDate:todayISO()};
+    const base=JSON.parse(JSON.stringify(SNAPSHOT[L.key]||{name:L.name,launchDate:ld}));
+    // Goals only: a target's pinned status (measured value, week, met/missed) never carries into a local snapshot.
+    const tg=(Array.isArray(L.targets)&&L.targets.length)?L.targets:(Array.isArray(base.targets)?base.targets:[]);
+    base.targets=tg.map(x=>{ const o={metric:x.metric,target:x.target}; if(x.entityId) o.entityId=x.entityId; return o; });
+    // Week N is recomputed for this snapshot's date; the pinned one would be stale under a new date.
+    base.weekN=weekNOf(ld,todayISO()); if(ISO_DATE.test(String(ld||""))) base.launchDate=ld;
+    const calls=[], gaps=[]; let okCalls=0, usageCt=0;
+    const gap=(call,label)=>{ calls.push(label||call); gaps.push(failedMsg(label||call)); };
     // usage = page, feature, and trackEvent entities; each is queried with its OWN type
     // (acquisitionTrend scope / entityUsage entityType both accept "trackEvent"). Guides take the
     // guideUsage path below. Adoption uses the first usage entity (a page-, feature-, or
     // track-event-only launch all work).
     const ents=L.entities||[], usage=ents.filter(e=>e.type==="page"||e.type==="feature"||e.type==="trackEvent"), guides=ents.filter(e=>e.type==="guide");
     const primary=usage[0]||null, primaryUrl=primary?pUrl(primary.type,primary.id):"";
-    let adoptTotal=null,lastWk=null,prevWk=null;
-    try{ if(primary){
+    let adoptTotal=null,adoptSpan="",adoptWks=0,lastWk=null,prevWk=null,lastSpan="",adoptFailed=false,lastStartISO=null,lastEndISO=null;
+    const appId=primary?[primary.appId,L.appId,CONFIG.appId].find(isSet):null;
+    if(primary&&!appId){ adoptFailed=true; calls.push("acquisitionTrend"); gaps.push("acquisitionTrend: no app id for "+primary.name); base.adoption={ weeks:[], newAccounts:[], caption:"", unavailable:"no app id for "+primary.name }; }
+    else if(primary){ try{
       // subId is the Pendo tool's parameter name; CONFIG.subscriptionId is the config key.
-      const a=await mcp("acquisitionTrend",{subId:CONFIG.subscriptionId,appId:CONFIG.appId,scope:primary.type,entityId:primary.id,unit:"account",periodType:"week",periodCount:8,userQuery:"launch-watch adoption"});
-      const acq=a.acquisition||[];
-      base.adoption={ weeks:acq.map(c=>String(c.cohortLabel||"").split(" - ")[0]), newAccounts:acq.map(c=>c.newCount), caption:(base.adoption&&base.adoption.caption)||"", url:primaryUrl, urlKind:primary.type };
-      adoptTotal=a.summary&&a.summary.totalNew; lastWk=acq.length?acq[acq.length-1].newCount:null; prevWk=acq.length>1?acq[acq.length-2].newCount:null;
-    }}catch(e){ fail("acquisitionTrend ("+(primary&&primary.name||"adoption")+")"); }
-    try{ const gg=[];
+      const a=await mcp("acquisitionTrend",{subId:CONFIG.subscriptionId,appId:appId,scope:primary.type,entityId:primary.id,unit:"account",periodType:"week",periodCount:ADOPT_WEEKS,userQuery:"launch-watch adoption"});
+      const w=adoptionWeeks(a.acquisition||[],todayISO()), n=w.counts.length;
+      base.adoption={ weeks:w.starts, spans:w.spans, newAccounts:w.counts, caption:"", url:primaryUrl, urlKind:primary.type };
+      // totalNew counts accounts whose FIRST-EVER use of the entity falls in these complete weeks, which
+      // don't start at the launch date, so the card says that rather than "since launch".
+      adoptTotal=a.summary&&a.summary.totalNew; adoptWks=w.fill?ADOPT_WEEKS:n;
+      adoptSpan=n?(w.starts[0]+" - "+w.spans[n-1].split(" - ").pop()):"";
+      // With every week filled, an empty response means 0 new accounts in each of them.
+      if(w.fill){ lastWk=n?w.counts[n-1]:(adoptTotal===0?0:null); prevWk=n>1?w.counts[n-2]:(adoptTotal===0?0:null); }
+      else { lastWk=n?w.counts[n-1]:null; prevWk=n>1?w.counts[n-2]:null; }
+      lastSpan=n?w.spans[n-1]:""; lastStartISO=w.lastStart; lastEndISO=w.lastEnd; okCalls++; usageCt++;
+    }catch(e){ adoptFailed=true; gap("acquisitionTrend"); base.adoption={ weeks:[], newAccounts:[], caption:"", unavailable:failedMsg("acquisitionTrend") }; } }
+    else base.adoption={ weeks:[], newAccounts:[], caption:"", notInScope:"no page, feature or track event in this launch" };
+    // Weekly active visitors and accounts: aggregateEntityUsage over the last of the ADOPT_WEEKS weeks (the same
+    // dates as the last of adoption.spans, as an absolute range). A target may carry its own entityId (set at
+    // setup when the launch has several page/feature/track-event entities); one call per distinct entity,
+    // deduped. A target without one is measured on the first usage entity (`weekly`). Not on a card: the counts
+    // go to the re-derived read, which names the entity, the dates and the number.
+    let weekly=null; const targetWeekly=[], wkCache={};
+    const weeklyFor=async(en)=>{ if(wkCache[en.id]) return wkCache[en.id]; let r;
+      if(adoptFailed) r={ entity:en.name, unavailable:"needs the acquisitionTrend weeks, which are unavailable" };
+      else if(!lastEndISO) r={ entity:en.name, unavailable:"the dates of the last complete week are not known" };
+      else { try{
+        const ea=[en.appId,L.appId,CONFIG.appId].find(isSet), wa={subId:CONFIG.subscriptionId}; if(ea) wa.appId=ea;
+        const wu=await mcp("aggregateEntityUsage",Object.assign(wa,{dateRange:{type:"absolute",startDate:lastStartISO,endDate:lastEndISO},productArea:[{entityType:en.type,ids:[en.id]}],limit:1,userQuery:"launch-watch weekly active"}));
+        const ws=wu&&wu.summary; if(!ws||ws.uniqueVisitors==null||ws.uniqueAccounts==null) throw new Error("no weekly active counts in the response");
+        r={ entity:en.name, weekOf:lastSpan, startDate:lastStartISO, endDate:lastEndISO, visitors:Number(ws.uniqueVisitors).toLocaleString(), accounts:Number(ws.uniqueAccounts).toLocaleString() }; okCalls++; usageCt++;
+      }catch(e){ gap("aggregateEntityUsage","aggregateEntityUsage (weekly active, "+en.name+")"); r={ entity:en.name, unavailable:failedMsg("aggregateEntityUsage") }; } }
+      wkCache[en.id]=r; return r; };
+    if(primary){
+      const own=base.targets.filter(x=>x.entityId&&WEEKLY_ACTIVE.test(x.metric||""));
+      // The first usage entity is measured only for a weekly active target without its own entity.
+      if(base.targets.some(t=>!t.entityId&&WEEKLY_ACTIVE.test(t.metric||""))) weekly=await weeklyFor(primary);
+      for(const t of own){ const en=usage.find(e=>e.id===t.entityId);
+        targetWeekly.push(Object.assign({ metric:t.metric }, en?await weeklyFor(en):{ entity:t.entityId, unavailable:"this entity is not in the launch" })); }
+    }
+    if(guides.length){ const gg=[];
       for(const g of guides){ try{
         const u=await mcp("guideUsage",{subId:CONFIG.subscriptionId,guideId:g.id,dateRange:dr,limit:1,userQuery:"launch-watch guide"});
-        const s=u.summary||{}, baked=(base.guides||[]).find(x=>x.name===g.name)||{};
-        gg.push({ name:g.name, url:pUrl("guide",g.id), status:baked.status||"", views:(s.totalViews!=null?s.totalViews.toLocaleString():"-"), visitors:(s.uniqueVisitors!=null?s.uniqueVisitors.toLocaleString():"-"), completion:(s.completionRate!=null?ratePct(s.completionRate):"-"), dismissal:(s.dismissalRate!=null?ratePct(s.dismissalRate):"-"), read:baked.read||"" });
-      }catch(e){ fail("guideUsage ("+g.name+")"); } }
-      if(gg.length) base.guides=gg;
-    }catch(e){ fail("guideUsage"); }
-    try{ const ss=[];
+        const s=u.summary||{};
+        // The status pill: listGuides with guideId returns the guide and its state (the API word; the page shows the
+        // Pendo UI label). A guide it doesn't know has no pill; a failed call says the status is unavailable.
+        let st="", stUn=false;
+        try{ const m=await mcp("listGuides",{subId:CONFIG.subscriptionId,guideId:g.id,userQuery:"launch-watch guide status"});
+          const rec=Array.isArray(m)?m.find(x=>x&&x.id===g.id):m; st=(rec&&typeof rec.state==="string")?rec.state:""; okCalls++;
+        }catch(e){ stUn=true; gap("listGuides","listGuides ("+g.name+")"); }
+        gg.push({ name:g.name, url:pUrl("guide",g.id), status:st, statusUnavailable:stUn, views:(s.totalViews!=null?s.totalViews.toLocaleString():"-"), visitors:(s.uniqueVisitors!=null?s.uniqueVisitors.toLocaleString():"-"), completion:(s.totalViews&&s.completionRate!=null?ratePct(s.completionRate):"-"), dismissal:(s.totalViews&&s.dismissalRate!=null?ratePct(s.dismissalRate):"-"), read:"" }); okCalls++; usageCt++;
+      }catch(e){ gap("guideUsage","guideUsage ("+g.name+")"); gg.push({ name:g.name, url:pUrl("guide",g.id), status:"", views:"-", visitors:"-", completion:"-", dismissal:"-", read:"Unavailable: "+failedMsg("guideUsage"), unavailable:true }); } }
+      if(gg.every(x=>x.unavailable)){ base.guides=[]; base.guidesUnavailable=failedMsg("guideUsage"); }
+      else { base.guides=gg; delete base.guidesUnavailable; }
+    }
+    else { base.guides=[]; delete base.guidesUnavailable; }
+    if(usage.length){ const ss=[];
       for(const en of usage){ try{
         const u=await mcp("entityUsage",{subId:CONFIG.subscriptionId,entityType:en.type,entityId:en.id,dateRange:dr,limit:1,userQuery:"launch-watch friction"});
-        const s=u.summary||{}, ev=s.totalNumEvents||0, baked=((base.friction&&base.friction.surfaces)||[]).find(x=>x.name===en.name)||{};
-        // dwell (avg time) is not in this summary, so live rows show "-"; u-turns apply to pages only;
-        // track events carry no frustration counts, so their dead and rage cells show "-".
-        ss.push({ name:en.name, url:pUrl(en.type,en.id), visitors:(s.totalNumVisitors!=null?s.totalNumVisitors.toLocaleString():"-"), dead:(ev&&s.totalDeadClickCount!=null?("~"+Math.round(s.totalDeadClickCount/ev*100)+"%"):"-"), rage:(s.totalRageClickCount!=null?s.totalRageClickCount.toLocaleString():"-"), uturns:(en.type==="page"&&s.totalUTurnCount!=null?s.totalUTurnCount.toLocaleString():"-"), dwell:"-", note:baked.note||"" });
-      }catch(e){ fail("entityUsage ("+en.name+")"); } }
-      if(ss.length) base.friction={ surfaces:ss, summary:(base.friction&&base.friction.summary)||"" };
-    }catch(e){ fail("entityUsage"); }
-    // sentiment: themes (the "why") + curated verbatims; drop call-pointer noise
-    const fbFilter={ startDate:CONFIG.launchDate, endDate:todayISO() };
-    if(isSet(CONFIG.feedbackAreaId)) fbFilter.productAreaIds=[CONFIG.feedbackAreaId]; else fbFilter.similaritySearchTerms=[base.name||L.name];
-    try{ const tp=await mcp("generateFeedbackTopics",{subId:CONFIG.subscriptionId,filters:fbFilter,userQuery:"launch-watch themes"});
-      const arr=Array.isArray(tp)?tp:(tp.topics||tp.data||[]);
-      const th=arr.slice(0,5).map(x=>({name:x.topicName||x.name||"", description:x.topicDescription||x.description||"", count:(x.vocInsightCount!=null?x.vocInsightCount:(x.count!=null?x.count:""))}));
-      if(th.length) base.themes=th;
-    }catch(e){ fail("generateFeedbackTopics"); }
-    try{ const fb=await mcp("getFeedbackItems",{subId:CONFIG.subscriptionId,filters:fbFilter,userQuery:"launch-watch feedback"});
-      const useful=(fb.data||[]).filter(it=>{ const src=String(it.source||""), dd=String(it.description||"").trim();
-        if(src==="PollResponse") return true;
-        if(/^[0-9a-f-]{20,}$/.test(src)) return false;
-        if(isCallSource(src)) return callHasQuote(dd, launchTerms(L, base));
-        return dd.length>60; }).slice(0,6).map(it=>{
-        const acct=it.account&&it.account.name?(" - "+it.account.name):"";
-        if(it.source==="PollResponse"){ const r=/^[1-5]$/.test(String(it.description).trim())?(" ["+String(it.description).trim()+"/5]"):""; return {text:'"'+String(it.title||"").replace(/\s+/g," ")+'"'+r+acct, source:"in-app poll", url:pUrl("feedback",it.id)}; }
-        return {text:String(it.title||"").replace(/\s+/g," ")+": "+String(it.description).replace(/\s+/g," ").slice(0,170)+acct, source:(String(it.source).length>20?"call/ticket":(it.source||"feedback")), url:pUrl("feedback",it.id)}; });
-      if(useful.length) base.sentiment=useful;
-    }catch(e){ fail("getFeedbackItems"); }
-    // Any failed call: stop here. Don't compute cards or re-run the analysis on partial data.
-    if(failed.length) return { ok:false, failed:failed };
+        const s=u.summary||{}, dp=deadPer100(en.type,s);
+        // Avg time (pages only) is aggregateEntityUsage's avgTimePerVisitor over the same window, in minutes;
+        // features and track events have none and show "-". u-turns apply to pages only; track events carry
+        // no frustration counts, so their dead and rage cells show "-".
+        let dw="-";
+        if(en.type==="page"){ try{
+          const ea=[en.appId,L.appId,CONFIG.appId].find(isSet), aa={subId:CONFIG.subscriptionId}; if(ea) aa.appId=ea;
+          const ag=await mcp("aggregateEntityUsage",Object.assign(aa,{dateRange:dr,productArea:[{entityType:"page",ids:[en.id]}],limit:1,userQuery:"launch-watch friction average time"}));
+          dw=minText(ag&&ag.summary&&ag.summary.avgTimePerVisitor); okCalls++;
+        }catch(e){ gap("aggregateEntityUsage","aggregateEntityUsage ("+en.name+" avg time)"); dw="unavailable"; } }
+        ss.push({ name:en.name, url:pUrl(en.type,en.id), visitors:(s.totalNumVisitors!=null?s.totalNumVisitors.toLocaleString():"-"), dead:deadText(en.type,dp), deadPer100:dp, rage:(en.type!=="trackEvent"&&s.totalRageClickCount!=null?s.totalRageClickCount.toLocaleString():"-"), uturns:(en.type==="page"&&s.totalUTurnCount!=null?s.totalUTurnCount.toLocaleString():"-"), dwell:dw, note:"" }); okCalls++; usageCt++;
+      }catch(e){ gap("entityUsage","entityUsage ("+en.name+")"); ss.push({ name:en.name, url:pUrl(en.type,en.id), visitors:"-", dead:"-", rage:"-", uturns:"-", dwell:"-", note:"Unavailable: "+failedMsg("entityUsage"), unavailable:true }); } }
+      // The pinned summary describes the pinned rows, so a local snapshot doesn't carry it.
+      if(ss.every(x=>x.unavailable)) base.friction={ surfaces:[], unavailable:failedMsg("entityUsage") };
+      else base.friction={ surfaces:ss, summary:"" };
+    }
+    else base.friction={ surfaces:[], notInScope:"no page, feature or track event in this launch" };
+    // Activation funnel: queryFunnel with the arguments the pin stored for this launch (L.funnel.args, the
+    // steps and the app), over the launch window, so the funnel is the same definition as the pin's. The page
+    // never invents a funnel and never runs the stand-in. No stored definition: a launch with a guide and a
+    // page, feature or track event shows "not refreshed" (it has a funnel the page can't re-run); any other
+    // launch has no funnel, which is not a gap.
+    const FN=(L.funnel&&L.funnel.args&&Array.isArray(L.funnel.args.steps)&&L.funnel.args.steps.length>=2)?L.funnel:null;
+    if(FN){ try{
+      const q=await mcp("queryFunnel",Object.assign({},FN.args,{subId:CONFIG.subscriptionId,dateRange:dr,userQuery:"launch-watch activation funnel"}));
+      const qs=q&&q.summary&&q.summary.steps; if(!Array.isArray(qs)||qs.length!==FN.args.steps.length) throw new Error("unexpected funnel response");
+      const nm=(FN.stepNames||[]), steps=qs.map((x,i)=>({ step:nm[i]||(FN.args.steps[i].kind+" "+FN.args.steps[i].id), n:Number(x.visitors)||0 }));
+      base.funnel={ steps:steps, conversion:(steps[0].n>0?pctText(steps[steps.length-1].n/steps[0].n):""), caveat:"" }; okCalls++; usageCt++;
+    }catch(e){ gap("queryFunnel"); base.funnel={ steps:[], unavailable:failedMsg("queryFunnel") }; } }
+    else if(guides.length&&usage.length) base.funnel={ steps:[], unavailable:"not refreshed in the page: this page holds no funnel definition for this launch; the funnel is re-pulled when the snapshot is re-pinned" };
+    else base.funnel={ steps:[] };
+    // Usage calls that came back in THIS refresh (adoption, weekly active, guides, friction, funnel), before the feedback count.
+    const usageOk=usageCt;
+    // sentiment: the themes and verbatims stay the pinned, hand-picked set (a page can't judge which
+    // items are about the launch, and a product-area filter returns the whole area). Refresh only
+    // counts new items that match the launch name since the pin, and says that is what ran.
+    // getFeedbackItems treats endDate as exclusive and rejects endDate <= startDate, so the window
+    // ends the day after the later of the pin date and today (todayISO is UTC; a pin made late in
+    // the day east of UTC can be dated after it).
+    const since=/^\d{4}-\d{2}-\d{2}$/.test(String(SNAPSHOT.asOf||""))?SNAPSHOT.asOf:ld; const term=isSet(L.name)?L.name:(base.name||"");
+    try{ const until=addDaysISO(since>todayISO()?since:todayISO(),1);
+      // getFeedbackItems returns at most 30 items per call, so a full page reads "30 or more".
+      const fb=await mcp("getFeedbackItems",{subId:CONFIG.subscriptionId,filters:{startDate:since,endDate:until,similaritySearchTerms:[term]},userQuery:"launch-watch new feedback count"});
+      const n=(fb.data||[]).length; okCalls++;
+      base.sentimentLive="Themes and quotes are the hand-picked set pinned "+(SNAPSHOT.asOf||"?")+". Since then, a search for \""+term+"\" finds "+(n>=30?"30 or more":String(n))+" new feedback item"+(n===1?"":"s")+(n?"; re-pin to review them.":".");
+    }catch(e){ gap("getFeedbackItems"); base.sentimentLive="Themes and quotes are the hand-picked set pinned "+(SNAPSHOT.asOf||"?")+". The count of new feedback since then is unavailable: "+failedMsg("getFeedbackItems")+"."; }
+    // Nothing came back for this launch: no snapshot for it.
+    if(!okCalls){ failed.push.apply(failed,calls); failedBy[L.key]=calls.slice(); continue; }
+    // The summary cards. SKILL.md ("Summary cards") defines the pinned cards the same way, so a pin and
+    // a local snapshot show the same measure under the same label.
     try{
-      const cards=[ {label:"Accounts reached", value:(adoptTotal!=null?adoptTotal.toLocaleString():"-"), sub:"since launch", primary:true, url:primaryUrl},
-        {label:"New accts, latest wk", value:(lastWk!=null?String(lastWk):"-"), prev:(prevWk!=null?String(prevWk):null), goodUp:true, sub:"latest week", url:primaryUrl} ];
-      if(base.guides&&base.guides[0]) cards.push({label:"Top guide completion", value:base.guides[0].completion, sub:(base.guides[0].views||"")+" views", url:base.guides[0].url});
-      if(base.friction&&base.friction.surfaces&&base.friction.surfaces.length){ const worst=base.friction.surfaces.slice().sort((a,b)=>(parseFloat(b.dead)||0)-(parseFloat(a.dead)||0))[0]; if(worst) cards.push({label:"Friction hotspot", value:worst.name, sub:worst.dead+" dead clicks", url:worst.url}); }
+      const cards=[];
+      // A failed call is "unavailable", never "none": the zero wording is only for a call that returned zero.
+      if(primary&&adoptFailed){ const why="unavailable: "+base.adoption.unavailable;
+        cards.push({label:"New accounts, "+ADOPT_WEEKS+" wks", value:"-", sub:why, primary:true, url:primaryUrl});
+        cards.push({label:"New accts, latest wk", value:"-", sub:why, url:primaryUrl}); }
+      else if(primary){
+        cards.push({label:"New accounts, "+(adoptWks||ADOPT_WEEKS)+" wks", value:(adoptTotal!=null?adoptTotal.toLocaleString():"-"), sub:"first use, "+(adoptSpan?("weeks of "+adoptSpan):"none in the last "+ADOPT_WEEKS+" complete weeks"), primary:true, url:primaryUrl});
+        cards.push({label:"New accts, latest wk", value:(lastWk!=null?String(lastWk):"-"), prev:(prevWk!=null?String(prevWk):null), goodUp:true, sub:(lastSpan?("week of "+lastSpan):"latest complete week"), url:primaryUrl}); }
+      // The launch guide is the FIRST guide in the launch's entities, not the one with the most views.
+      const g0=base.guides&&base.guides[0];
+      if(g0) cards.push({label:"Launch guide completion", value:g0.completion, sub:g0.name+(g0.views&&g0.views!=="-"?(", "+g0.views+" views since launch"):""), url:g0.url});
+      // Hotspot: the surface with the most dead clicks per 100 events; ties go to more rage clicks, then
+      // entity order. No card when no surface has any: a zero isn't a hotspot.
+      const ranked=((base.friction&&base.friction.surfaces)||[]).filter(s=>!s.unavailable&&s.deadPer100>0);
+      if(ranked.length){ const worst=ranked.slice().sort((a,b)=>(b.deadPer100-a.deadPer100)||((toNum(b.rage)||0)-(toNum(a.rage)||0)))[0];
+        cards.push({label:"Friction hotspot", value:worst.name, sub:worst.deadPer100+(worst.deadPer100===1?" dead click":" dead clicks")+" per 100 "+(worst.dead.indexOf("views")>=0?"views":"clicks"), url:worst.url}); }
+      // The funnel card: labelled with the funnel's own name, sub starting "funnel,"; only with entrants at step 1.
+      const fs=(base.funnel&&base.funnel.steps)||[];
+      if(FN&&!base.funnel.unavailable&&fs.length>=2&&fs[0].n>0){ const lastS=fs[fs.length-1];
+        cards.push({label:(FN.name||"Activation funnel"), value:base.funnel.conversion, sub:"funnel, "+lastS.n.toLocaleString()+" of "+fs[0].n.toLocaleString()+" completed every step"}); }
       base.cards=cards;
     }catch(e){}
+    // No usage number came back (only the feedback count): there is nothing to interpret, so the read
+    // says so in one line instead of asking the analyst to write sentences about missing data.
+    if(!usageOk){
+      base.read={level:"none", verdict:"No usage numbers came back for this launch, so there is nothing to read yet.", narrative:(gaps.length?("Unavailable in this refresh: "+gaps.join("; ")+". "):"")+"Generate again, or re-pin to read it."};
+      // Saved with the others, but on its own it isn't a refresh: with no other launch, it failed.
+      if(gaps.length) base.partial=gaps; else delete base.partial;
+      noUsageCalls.push.apply(noUsageCalls,calls); out[L.key]=base; continue;
+    }
     // The read must be re-derived over the new numbers; an old read under a new date is a failure.
     let a=null;
-    try{ a=await reanalyze({targets:base.targets||[],cards:base.cards,adoption:base.adoption,guides:base.guides,funnel:base.funnel,friction:base.friction}, base.name||L.name); }catch(e){ a=null; }
-    if(!a) return { ok:false, failed:[HOST.ask?"analysis (HOST.ask)":"analysis (no HOST.ask on this surface)"] };
+    try{ a=await reanalyze({targets:base.targets||[],cards:base.cards,adoption:base.adoption,weeklyActive:weekly,targetWeekly:targetWeekly,guides:base.guides,funnel:base.funnel,friction:base.friction,unavailable:gaps}, base.name||L.name); }catch(e){ a=null; }
+    // Only this launch fails; launches that already refreshed are kept.
+    if(!a){ const why=HOST.ask?"analysis (HOST.ask)":"analysis (no HOST.ask on this surface)"; failed.push(why); failedBy[L.key]=[why]; continue; }
     base.read={level:a.level,verdict:a.verdict,narrative:a.narrative};
-    if(a.adoptionCaption&&base.adoption) base.adoption.caption=a.adoptionCaption;
-    (base.guides||[]).forEach(g=>{ if(a.guideReads&&a.guideReads[g.name]) g.read=a.guideReads[g.name]; });
-    ((base.friction&&base.friction.surfaces)||[]).forEach(s=>{ if(a.frictionNotes&&a.frictionNotes[s.name]) s.note=a.frictionNotes[s.name]; });
-    out[L.key]=base;
+    if(a.adoptionCaption&&base.adoption&&!base.adoption.unavailable&&!base.adoption.notInScope) base.adoption.caption=a.adoptionCaption;
+    (base.guides||[]).forEach(g=>{ if(!g.unavailable&&a.guideReads&&a.guideReads[g.name]) g.read=a.guideReads[g.name]; });
+    ((base.friction&&base.friction.surfaces)||[]).forEach(s=>{ if(!s.unavailable&&a.frictionNotes&&a.frictionNotes[s.name]) s.note=a.frictionNotes[s.name]; });
+    if(gaps.length) base.partial=gaps; else delete base.partial;
+    out[L.key]=base; any=true;
   }
-  return { ok:true, data:out };
+  // Every launch had only its feedback count: nothing was refreshed, and the banner names the calls that failed.
+  if(!any){ failed.push.apply(failed,noUsageCalls); return { ok:false, failed:failed }; }
+  return { ok:true, data:out, failed:failed, failedBy:failedBy };
 }
 
 // ---- helpers ---------------------------------------------------------------
-function esc(s){ return String(s==null?"":s).replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])); }
-function pHost(){ return isSet(CONFIG.pendoHost) ? String(CONFIG.pendoHost).replace(/^https?:\/\//,"").replace(/\/+$/,"") : ""; }
-function pUrl(kind,id){ if(!id || !pHost() || !isSet(CONFIG.subscriptionId)) return ""; var base="https://"+pHost()+"/s/"+CONFIG.subscriptionId; if(kind==="feedback") return base+"/listen/validate?openItem="+id; var m={guide:"/guides/",page:"/pages/",feature:"/features/",object:"/objects/",trackEvent:"/trackevents/"}; return base+(m[kind]||"/pages/")+id; }
+const GUIDE_STATE={public:"Public",staged:"Staged",draft:"Draft",_pendingreview_:"Pending review",disabled:"Inactive",_archived_:"Archived"};
+// Guide states as the Pendo UI labels them; the API says "disabled" where the UI says "Inactive".
+function guideState(v){ const k=String(v==null?"":v).trim(); return GUIDE_STATE[k.toLowerCase()]||k; }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+// Deep links go only to a public https Pendo host. A local or private address (localhost, 127.x,
+// 10.x, 192.168.x, a bare name) is refused, so a shared page can never point at someone's machine.
+function pHost(){ if(!isSet(CONFIG.pendoHost)) return ""; const h=String(CONFIG.pendoHost).trim().replace(/^https?:\/\//i,"").split(/[\/?#]/)[0].toLowerCase();
+  return (!h || h.indexOf(".")<0 || /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[)/.test(h) || /\.local$/.test(h)) ? "" : h; }
+// A link is kept only when its host is exactly CONFIG.pendoHost (every link the skill builds is a Pendo deep link).
+function safeUrl(u){ const s=String(u||""), m=/^https:\/\/([^\/?#:@\\]+)(?=[\/?#]|$)/i.exec(s), h=pHost(); return (m&&h&&m[1].toLowerCase()===h)?s:""; }
+function pUrl(kind,id){ if(!id || !pHost() || !isSet(CONFIG.subscriptionId)) return ""; var sid=encodeURIComponent(CONFIG.subscriptionId), eid=encodeURIComponent(id); var base="https://"+pHost()+"/s/"+sid; if(kind==="feedback") return base+"/listen/validate?openItem="+eid; var m={guide:"/guides/",page:"/pages/",feature:"/features/",object:"/objects/",trackEvent:"/trackevents/"}; return base+(m[kind]||"/pages/")+eid; }
 function kindLabel(k){ return ({page:"page",feature:"feature",guide:"guide",trackEvent:"track event",object:"object"})[k]||"source"; }
-function lnk(url,label){ return url?('<a class="lw-link" href="'+esc(url)+'" target="_blank" rel="noopener">'+label+' <span class="lw-ext">&#8599;</span></a>'):label; }
+function lnk(url,label){ url=safeUrl(url); return url?('<a class="lw-link" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+label+' <span class="lw-ext">&#8599;</span></a>'):label; }
 function hasTargets(d){ return !!d && Array.isArray(d.targets) && d.targets.length>0; }
 // Status color only when the launch has targets; otherwise (or on an unknown level) neutral.
 function levelOf(d){ const lv=d&&d.read&&d.read.level; return (hasTargets(d) && ["green","amber","red"].indexOf(lv)>=0) ? lv : "none"; }
+// A card value that is a name (the friction hotspot) is set smaller and wraps, instead of at number size.
+function isTextVal(v){ const s=String(v==null?"":v).trim(); return !!s && s!=="-" && !/^[~<>]?[\d.,]+\s*%?$/.test(s); }
 function toNum(v){ if(v==null) return null; const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?null:n; }
 function deltaHtml(c){ if(c.prev==null||c.prev==="") return ""; const a=toNum(c.value),b=toNum(c.prev); let dir="flat"; if(a!=null&&b!=null) dir=a>b?"up":a<b?"down":"flat"; const good=dir==="flat"?"lw-flat":((dir==="up")===!!c.goodUp?"lw-up":"lw-down"); const ar=dir==="up"?"&#9650;":dir==="down"?"&#9660;":"&#9644;"; return `<div class="delta ${good}">${ar} vs ${esc(c.prev)} prior</div>`; }
 
 let CHART;
-function drawAdoption(d){
+function drawAdoption(d,pal){
   const host=document.getElementById("lw-adoption");
   const wk=(d.adoption&&d.adoption.weeks)||[], ys=(d.adoption&&d.adoption.newAccounts)||[];
   document.getElementById("lw-adopt-cap").innerHTML=esc((d.adoption&&d.adoption.caption)||"")+((d.adoption&&d.adoption.url)?(" "+lnk(d.adoption.url,"View "+kindLabel(d.adoption.urlKind)+" in Pendo")):"");
-  if(!ys.length){ host.innerHTML='<div class="lw-empty">No adoption data yet.</div>'; return; }
+  if(d.adoption&&d.adoption.notInScope){ host.innerHTML='<div class="lw-empty">Not in scope: '+esc(d.adoption.notInScope)+'</div>'; return; }
+  if(d.adoption&&d.adoption.unavailable){ host.innerHTML='<div class="lw-empty">Unavailable: '+esc(d.adoption.unavailable)+'</div>'; return; }
+  if(!ys.length){ host.innerHTML='<div class="lw-empty">No new accounts in the last '+ADOPT_WEEKS+' complete weeks.</div>'; return; }
+  const cs=getComputedStyle(document.getElementById("lw-root")), cv=(n,f)=>(cs.getPropertyValue(n)||"").trim()||f;
+  const accent=(pal&&pal.accent)||cv("--pink","#FF4876"), gridc=(pal&&pal.grid)||cv("--grid","#EEEEEE"), muted=(pal&&pal.muted)||cv("--muted","#6B7280");
   if(typeof Chart!=="undefined"){ try{ host.innerHTML='<canvas height="150"></canvas>'; if(CHART) CHART.destroy();
-      CHART=new Chart(host.firstChild,{type:"bar",data:{labels:wk,datasets:[{data:ys,backgroundColor:"rgba(255,72,118,.85)",borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:"#EEE"}},x:{grid:{display:false}}}}}); return;
+      CHART=new Chart(host.firstChild,{type:"bar",data:{labels:wk,datasets:[{data:ys,backgroundColor:accent,borderRadius:4}]},options:{animation:pal?false:undefined,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:gridc},ticks:{color:muted}},x:{grid:{display:false},ticks:{color:muted}}}}}); return;
   }catch(e){} }
   const W=460,H=150,P=24,max=Math.max(...ys,1);
-  const bars=ys.map((y,i)=>{const x=P+i*(W-2*P)/ys.length,h=(y/max)*(H-2*P),bw=(W-2*P)/ys.length*.7;return `<rect x="${(x+3).toFixed(1)}" y="${(H-P-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="#FF4876"/><text x="${(x+3+bw/2).toFixed(1)}" y="${H-6}" font-size="9" fill="#6B7280" text-anchor="middle">${esc(wk[i]||"")}</text>`;}).join("");
+  const bars=ys.map((y,i)=>{const x=P+i*(W-2*P)/ys.length,h=(y/max)*(H-2*P),bw=(W-2*P)/ys.length*.7;return `<rect x="${(x+3).toFixed(1)}" y="${(H-P-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${accent}"/><text x="${(x+3+bw/2).toFixed(1)}" y="${H-6}" font-size="9" fill="${muted}" text-anchor="middle">${esc(wk[i]||"")}</text>`;}).join("");
   host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:170px">${bars}</svg>`;
 }
 
 function render(data,key){
-  const d=data[key]; if(!d) return; const S=(id,h)=>{const el=document.getElementById(id); if(el) el.innerHTML=h;};
-  try{ document.getElementById("lw-name").textContent=d.name||"{{FEATURE_NAME}}"; document.getElementById("lw-date").textContent=d.launchDate||"{{LAUNCH_DATE}}"; document.getElementById("lw-week").textContent=d.weekN!=null?d.weekN:"{{WEEK_N}}"; }catch(e){}
+  const d=data[key], miss=document.getElementById("lw-missing"), body=document.getElementById("lw-body");
+  // A snapshot without this launch (for example an archived pin from before it was tracked) shows an
+  // empty state, never the previous view's numbers under this snapshot's label.
+  if(!d){ const L=CONFIG.launches.find(x=>x.key===key)||{};
+    try{ document.getElementById("lw-name").textContent=isSet(L.name)?L.name:"-"; document.getElementById("lw-date").textContent=isSet(L.launchDate)?L.launchDate:"-"; document.getElementById("lw-week").textContent="-"; }catch(e){}
+    const fl=data.failedLaunches&&data.failedLaunches[key];
+    miss.textContent=Array.isArray(fl)&&fl.length?("Refresh failed for this launch in the "+(data.asOf||"?")+" local snapshot: "+fl.filter((x,i,a)=>a.indexOf(x)===i).map(String).join(", ")+". Pick the pinned snapshot in History to see its last pinned numbers."):("This launch was not tracked in the "+(data.asOf||"?")+" snapshot.");
+    miss.hidden=false; body.hidden=true; exportable(false); return; }
+  miss.hidden=true; body.hidden=false; exportable(true);
+  try{ const pn=document.getElementById("lw-partial"), gp=d.partial||[]; pn.textContent=gp.length?("Partial snapshot: "+gp.join("; ")+". Those sections show as unavailable and the read leaves them out; everything else is from this refresh."):""; pn.hidden=!gp.length; }catch(e){}
+  const S=(id,h)=>{const el=document.getElementById(id); if(el) el.innerHTML=h;};
+  try{ document.getElementById("lw-name").textContent=d.name||"-"; document.getElementById("lw-date").textContent=d.launchDate||"-"; document.getElementById("lw-week").textContent=d.weekN!=null?d.weekN:"-"; }catch(e){}
   try{ const b=document.getElementById("lw-banner"), t=hasTargets(d); b.className="lw-banner lw-"+levelOf(d)+(t?" has-targets":""); document.getElementById("lw-banner-text").textContent=(d.read&&d.read.verdict)||" - ";
-    S("lw-targets", t ? ("Targets: "+d.targets.map(x=>esc(x.metric)+" "+esc(x.target)).join(" &middot; ")) : "No launch targets set, so the health read is not colored."); }catch(e){}
+    S("lw-targets", t ? ("Targets: "+d.targets.map(x=>esc(x.metric)+" "+esc(x.target)+(x.status?" ("+esc(x.status)+")":"")).join(" &middot; ")) : "No launch targets set, so the health read is not colored."); }catch(e){}
   try{ document.getElementById("lw-read").textContent=(d.read&&d.read.narrative)||""; }catch(e){}
-  try{ S("lw-cards",(d.cards||[]).map(c=>`<div class="lw-card ${c.primary?'primary':''}"><div class="lbl">${c.url?lnk(c.url,esc(c.label)):esc(c.label)}</div><div class="val">${esc(c.value)}</div>${c.sub?`<div class="sub">${esc(c.sub)}</div>`:''}${deltaHtml(c)}</div>`).join("")); }catch(e){}
+  try{ S("lw-cards",(d.cards||[]).map(c=>`<div class="lw-card ${c.primary?'primary':''}"><div class="lbl">${c.url?lnk(c.url,esc(c.label)):esc(c.label)}</div><div class="val${isTextVal(c.value)?' txt':''}" title="${esc(c.value)}">${esc(c.value)}</div>${c.sub?`<div class="sub">${esc(c.sub)}</div>`:''}${deltaHtml(c)}</div>`).join("")); }catch(e){}
   try{ drawAdoption(d); }catch(e){ S("lw-adoption",'<div class="lw-empty">Chart unavailable.</div>'); }
-  try{ const fp=document.getElementById("lw-funnel-panel"), f=(d.funnel&&d.funnel.steps)||[]; if(f.length>=2){ fp.style.display=""; const top=f[0].n||1;
-      S("lw-funnel", f.map(s=>`<div class="lw-funnel-step"><span>${esc(s.step)}</span><b>${s.n.toLocaleString()}</b></div><div class="lw-bar" style="width:${Math.round((s.n/top)*100)}%"></div>`).join("")+`<div style="margin-top:4px;font-size:13px">Conversion: <b>${esc(d.funnel.conversion||Math.round((f[f.length-1].n/top)*100)+'%')}</b></div>`+(d.funnel.caveat?`<div class="lw-caveat">${esc(d.funnel.caveat)}</div>`:'')); } else fp.style.display="none"; }catch(e){}
+  try{ const F=d.funnel||{}, f=F.steps||[], cav=F.caveat?`<div class="lw-caveat">${esc(F.caveat)}</div>`:'';
+    if(F.unavailable) S("lw-funnel", `<div class="lw-empty">Unavailable: ${esc(F.unavailable)}</div>`+cav);
+    else if(f.length>=2 && !(Number(f[0].n)>0)) S("lw-funnel", `<div class="lw-empty">No signal yet: nobody reached the first step (${esc(f[0].step)}) in this window, so there is no conversion to read.</div>`+cav);
+    else if(f.length>=2){ const top=f[0].n;
+      S("lw-funnel", f.map(s=>`<div class="lw-funnel-step"><span>${esc(s.step)}</span><b>${Number(s.n).toLocaleString()}</b></div><div class="lw-bar" style="width:${Math.round((s.n/top)*100)}%"></div>`).join("")+`<div style="margin-top:4px;font-size:13px">Conversion: <b>${esc(F.conversion||Math.round((f[f.length-1].n/top)*100)+'%')}</b></div>`+cav); }
+    else S("lw-funnel", '<div class="lw-empty">No funnel for this launch: it needs a guide and a feature or page in scope.</div>'); }catch(e){}
   try{ const gp=document.getElementById("lw-guide-panel"), g=d.guides||[]; if(g.length){ gp.style.display="";
-      S("lw-guides", `<div class="lw-th"><span>Guide</span><span>Views</span><span>Visitors</span><span>Completion</span><span>Dismissal</span></div>`+g.map(x=>`<div class="lw-guide"><span class="gname">${x.url?lnk(x.url,esc(x.name)):esc(x.name)}${x.status?`<span class="lw-pill warn">${esc(x.status)}</span>`:''}</span><span>${esc(x.views)}</span><span>${esc(x.visitors)}</span><span>${esc(x.completion)}</span><span>${esc(x.dismissal)}</span>${x.read?`<div class="lw-sub2">${esc(x.read)}</div>`:''}</div>`).join("")); } else gp.style.display="none"; }catch(e){}
-  try{ const frp=document.getElementById("lw-friction-panel"), s=(d.friction&&d.friction.surfaces)||[]; if(s.length){ frp.style.display="";
-      S("lw-friction", `<div class="lw-th lw-th-fr"><span>Surface</span><span>Visitors</span><span>Dead clicks</span><span>Rage clicks</span><span>U-turns</span><span>Avg time</span></div>`+s.map(x=>`<div class="lw-fr"><span class="fname">${x.url?lnk(x.url,esc(x.name)):esc(x.name)}</span><span>${esc(x.visitors)}</span><span>${esc(x.dead)}</span><span>${esc(x.rage)}</span><span>${esc(x.uturns!=null&&x.uturns!==""?x.uturns:"-")}</span><span>${esc(x.dwell!=null&&x.dwell!==""?x.dwell:"-")}</span>${x.note?`<div class="lw-sub2">${esc(x.note)}</div>`:''}</div>`).join("")+(d.friction.summary?`<div class="lw-note">${esc(d.friction.summary)}</div>`:'')); } else frp.style.display="none"; }catch(e){}
+      S("lw-guides", `<div class="lw-th"><span>Guide</span><span>Views</span><span>Visitors</span><span>Completion</span><span>Dismissal</span></div>`+g.map(x=>{ const zero=toNum(x.views)===0, rd=x.read||(zero?"No views in this window, so completion and dismissal can't be read yet.":"");
+        return `<div class="lw-guide"><span class="gname">${x.url?lnk(x.url,esc(x.name)):esc(x.name)}${x.status?`<span class="lw-pill warn">${esc(guideState(x.status))}</span>`:(x.statusUnavailable?'<span class="lw-pill warn unavail">Status unavailable</span>':'')}</span><span>${esc(x.views)}</span><span>${esc(x.visitors)}</span><span>${esc(zero?"-":x.completion)}</span><span>${esc(zero?"-":x.dismissal)}</span>${rd?`<div class="lw-sub2">${esc(rd)}</div>`:''}</div>`; }).join("")); }
+    else if(d.guidesUnavailable){ gp.style.display=""; S("lw-guides", `<div class="lw-empty">Unavailable: ${esc(d.guidesUnavailable)}</div>`); }
+    else gp.style.display="none"; }catch(e){}
+  try{ const Fr=d.friction||{}, s=Fr.surfaces||[];
+    if(Fr.notInScope) S("lw-friction", `<div class="lw-empty">Not in scope: ${esc(Fr.notInScope)}</div>`);
+    else if(Fr.unavailable) S("lw-friction", `<div class="lw-empty">Unavailable: ${esc(Fr.unavailable)}</div>`);
+    else if(s.length) S("lw-friction", `<div class="lw-th lw-th-fr"><span>Surface</span><span>Visitors</span><span>Dead clicks</span><span>Rage clicks</span><span>U-turns</span><span>Avg time</span></div>`+s.map(x=>`<div class="lw-fr"><span class="fname">${x.url?lnk(x.url,esc(x.name)):esc(x.name)}</span><span>${esc(x.visitors)}</span><span>${esc(x.dead)}</span><span>${esc(x.rage)}</span><span>${esc(x.uturns!=null&&x.uturns!==""?x.uturns:"-")}</span><span>${esc(x.dwell!=null&&x.dwell!==""?x.dwell:"-")}</span>${x.note?`<div class="lw-sub2">${esc(x.note)}</div>`:''}</div>`).join("")+(Fr.summary?`<div class="lw-note">${esc(Fr.summary)}</div>`:''));
+    else S("lw-friction", '<div class="lw-empty">No signal yet: no friction data for the surfaces in scope.</div>'); }catch(e){}
   try{ const sp=document.getElementById("lw-sentiment-panel"); sp.style.display="";
     const th=d.themes||[]; S("lw-themes", th.length?('<div class="lw-sublabel">Themes</div>'+th.map(x=>`<div class="lw-theme"><b>${esc(x.name)}</b> <span class="cnt">(${esc(x.count)})</span> &mdash; ${esc(x.description)}</div>`).join("")):"");
-    const s=d.sentiment||[]; S("lw-sentiment", s.length?('<div class="lw-sublabel" style="margin-top:12px">Representative feedback</div>'+s.map(x=>`<div class="lw-fb">${esc(x.text)}<span class="src">${esc(x.source||'feedback')}</span>${x.url?(' <a class="lw-src-link" href="'+esc(x.url)+'" target="_blank" rel="noopener">&#8599;</a>'):''}</div>`).join("")):(th.length?"":'<div class="lw-empty">No sentiment signal for this launch yet.</div>')); }catch(e){}
+    const s=d.sentiment||[]; const notes=[d.sentimentNote,d.sentimentLive].filter(Boolean).map(t=>`<div class="lw-sub2">${esc(t)}</div>`).join(""); S("lw-sentiment", (s.length?('<div class="lw-sublabel" style="margin-top:12px">Representative feedback</div>'+s.map(x=>`<div class="lw-fb">${esc(x.text)}<span class="src">${esc(x.source||'feedback')}</span>${safeUrl(x.url)?(' <a class="lw-src-link" href="'+esc(safeUrl(x.url))+'" target="_blank" rel="noopener noreferrer">&#8599;</a>'):''}</div>`).join("")):(th.length?"":(d.sentimentChecked===false?'<div class="lw-empty">Listen feedback was not checked for this snapshot.</div>':'<div class="lw-empty">No sentiment signal for this launch yet.</div>')))+notes); }catch(e){}
 }
 
 let CURRENT="l1", CURVIEW=null;
 function setState(txt,live){ const el=document.getElementById("lw-state"); el.textContent=txt; el.className="lw-state"+(live?" live":""); }
-function lkey(){ return "lw-hist-"+(CONFIG.appId||"")+"-"+CONFIG.launches.map(l=>l.key).join(","); }
+function lkey(){ return "lw-hist-"+(CONFIG.subscriptionId||"")+"-"+(CONFIG.appId||"")+"-"+CONFIG.launches.map(l=>l.key+":"+(l.name||"")).join(","); }
 function getLocals(){ try{ return JSON.parse(localStorage.getItem(lkey())||"[]"); }catch(e){ return []; } }
 function saveLocal(s){ try{ const a=getLocals(); a.unshift(s); localStorage.setItem(lkey(), JSON.stringify(a.slice(0,12))); }catch(e){} }
 function snapshots(){
   const pinned=Object.assign({}, SNAPSHOT, {_tag:"pinned"});
   const locals=getLocals().map(h=>Object.assign({}, h, {_tag:"local"}));
   const arch=(typeof HISTORY!=="undefined"?HISTORY:[]).map(h=>Object.assign({}, h, {_tag:"archived"}));
-  return [pinned].concat(locals, arch).sort((a,b)=>String(b.asOf||"").localeCompare(String(a.asOf||"")));
+  // Same-day pins sort and read apart by pinnedAt (ISO time); local snapshots carry generatedAt.
+  const when=s=>String(s.asOf||"")+" "+String(s.pinnedAt||s.generatedAt||"");
+  return [pinned].concat(locals, arch).sort((a,b)=>when(b).localeCompare(when(a)));
 }
-function optLabel(s){ return (s.asOf||"?")+(s._tag==="pinned"?"  (current pin)":s._tag==="local"?"  (local, unpinned)":"  (archived)"); }
-function fillHistory(selectAsOf){
+function hhmm(iso){ const t=new Date(iso||""); return isNaN(t)?"":(" "+String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0")); }
+function optLabel(s){ return (s.asOf||"?")+hhmm(s.pinnedAt||s.generatedAt)+(s._tag==="pinned"?"  (current pin)":s._tag==="local"?"  (local, unpinned)":"  (archived)"); }
+function fillHistory(pick){
   const sel=document.getElementById("lw-history"), arr=snapshots();
   sel.innerHTML=arr.map((s,i)=>`<option value="${i}">${esc(optLabel(s))}</option>`).join("");
-  let idx=0; if(selectAsOf){ const k=arr.findIndex(s=>s.asOf===selectAsOf); if(k>=0) idx=k; }
+  // pick selects the entry being shown (a function), or the first entry with that asOf (a string).
+  const f=typeof pick==="function"?pick:(pick?(s=>s.asOf===pick):null);
+  let idx=0; if(f){ const k=arr.findIndex(f); if(k>=0) idx=k; }
   sel.value=idx; sel.onchange=()=>viewSnapshot(arr[sel.value]);
   return arr;
 }
@@ -425,64 +661,151 @@ function viewSnapshot(s){
   document.getElementById("lw-back").style.display = s._tag==="pinned" ? "none" : "";
   render(s, CURRENT);
 }
-function showCurrent(){ const arr=fillHistory(SNAPSHOT.asOf); viewSnapshot(arr.find(s=>s._tag==="pinned")||arr[0]); }
+function showCurrent(){ const arr=fillHistory(s=>s._tag==="pinned"); viewSnapshot(arr.find(s=>s._tag==="pinned")||arr[0]); }
 async function generatePin(){
-  // Durable + shared: trigger the configured re-pin task (agent re-pulls, re-analyses, archives old, updates this artifact).
-  if(isSet(CONFIG.repinTaskId) && HOST.runTask){
-    try{ setState("re-pinning...",true); await HOST.runTask(CONFIG.repinTaskId);
-      document.getElementById("lw-hint").textContent="Re-pin started - reload this artifact shortly to see the new pinned snapshot (and the old one moves into History)."; return; }catch(e){}
-  }
-  // Fallback: generate a snapshot now for THIS browser, until the skill re-pins it for everyone.
-  if(!HOST.callTool){ document.getElementById("lw-hint").textContent="Generating a snapshot here needs a surface that can call the Pendo connector. Otherwise run 'refresh my launch watch'."; return; }
-  setState("generating...",true); refreshNote("");
+  // Live pull for THIS viewer only. Pinning for everyone (and archiving) is a skill re-run.
+  if(!HOST.ready){ hint("Still connecting to this view's tools. Try again in a moment."); return; }
+  if(!HOST.callTool){ hint("Live refresh needs the Pendo connector in this view. To update the shared snapshot, ask Claude to 'refresh my launch watch'."); return; }
+  const btn=document.getElementById("lw-generate"); if(btn.disabled) return;
+  btn.disabled=true; setState("generating...",true); refreshNote("");
   let res;
   try{ res=await fetchLive(); }catch(e){ res={ ok:false, failed:["refresh (unexpected error)"] }; }
+  finally{ btn.disabled=false; }
   if(!res || !res.ok){
-    // Keep the pinned snapshot and its original "As of" date; say which call failed.
+    // Total failure (no launch came back, or no read could be re-derived): keep the
+    // pinned snapshot and its original "As of" date, and say which call failed.
     showCurrent();
-    refreshNote("refresh failed: "+((res&&res.failed)||["unknown call"]).join(", ")+". Showing the pinned snapshot as of "+(SNAPSHOT.asOf||"?")+".");
+    refreshNote("refresh failed: "+((res&&res.failed&&res.failed.length)?res.failed.filter((x,i,a)=>a.indexOf(x)===i):["unknown call"]).join(", ")+". Showing the pinned snapshot as of "+(SNAPSHOT.asOf||"?")+".");
     hint("Live refresh failed, so nothing was updated. Retry, or run 'refresh my launch watch'.");
     return;
   }
   const data=res.data;
-  const snap={ asOf:new Date().toISOString().slice(0,10) }; snap[CURRENT]=data[CURRENT];
+  // Every launch that refreshed goes into the local snapshot; a launch that failed is recorded with
+  // its calls, so its tab says why instead of "not tracked".
+  const snap=Object.assign({}, data, { asOf:new Date().toISOString().slice(0,10), generatedAt:new Date().toISOString() });
+  if(Object.keys(res.failedBy||{}).length) snap.failedLaunches=res.failedBy;
   saveLocal(snap);
-  const arr=fillHistory(snap.asOf); viewSnapshot(arr.find(s=>s._tag==="local"&&s.asOf===snap.asOf)||arr[0]);
-  document.getElementById("lw-hint").textContent="Generated a local snapshot (this browser). To pin it for everyone and archive it, run 'refresh my launch watch'.";
+  const mine=s=>s._tag==="local"&&s.generatedAt===snap.generatedAt, arr=fillHistory(mine), i=arr.findIndex(mine);
+  viewSnapshot(arr[i>=0?i:0]);
+  // A partial snapshot says how many sections are missing; the page marks each one.
+  if(!data[CURRENT]){ hint("Generated a local snapshot (this browser) for the other launches; this one failed to refresh, as noted on the page. Retry, or run 'refresh my launch watch'."); return; }
+  const gaps=(data[CURRENT].partial||[]).length;
+  hint(gaps?("Generated a partial local snapshot (this browser): "+gaps+" section"+(gaps===1?"":"s")+" unavailable, marked on the page. Retry, or run 'refresh my launch watch' to pin it for everyone."):"Generated a local snapshot (this browser). To pin it for everyone and archive it, run 'refresh my launch watch'.");
 }
 function refreshNote(m){ const el=document.getElementById("lw-refresh-note"); if(!el) return; el.textContent=m||""; el.hidden=!m; }
 function hint(m){ document.getElementById("lw-hint").textContent=m; }
 function fname(ext){ const src=CURVIEW||SNAPSHOT, nm=(src[CURRENT]&&src[CURRENT].name)||"launch", stamp=src.asOf||""; return ("launch-watch-"+nm+"-"+stamp+"."+ext).replace(/[^a-z0-9.\-]+/gi,"-").toLowerCase(); }
-function downloadBlob(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
+function bgColor(){ return (getComputedStyle(document.getElementById("lw-root")).getPropertyValue("--bg")||"").trim()||"#F6F7FB"; }
+const NO_EXPORT="Export isn't available in this view. Ask Claude for the HTML file, then open it and print it to PDF.";
+// After a too_large refusal, the next export of any format is a smaller rendition (PNG/PDF at 1x,
+// HTML without the baked chart image); a successful save resets it.
+let SMALL=false;
+function saveError(e){ const c=String((e&&e.code)||"");
+  if(c==="rate_limited") return "Another save prompt is open or was just shown. Try again in a moment.";
+  if(c==="declined") return "Export cancelled.";
+  if(c==="too_large"){ SMALL=true; return "That file is too large to save here. Export again for a smaller version (lower resolution; the HTML leaves out the chart image)."; }
+  return NO_EXPORT; }  // unavailable, not_granted, capability_*, or anything unrecognised
+async function saveFile(blob,name){
+  if(HOST.save){ try{ await HOST.save(name,blob); hint("Saved "+name+"."); SMALL=false; }catch(e){ hint(saveError(e)); } return; }
+  if(location.protocol==="file:"){ downloadBlob(blob,name); return; }
+  hint(NO_EXPORT);
+}
+function downloadBlob(blob,name){ const a=document.createElement("a"); const u=URL.createObjectURL(blob); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),60000); }
+// Transient viewer UI never goes into an export: the toolbar and the refresh-failed note. The
+// "pinned snapshot" label is left out too, but a local or archived snapshot keeps its label, so an
+// exported file can't pass for the pin.
+function notExportedIds(){ return ["lw-refresh-note"].concat((!CURVIEW||CURVIEW._tag==="pinned")?["lw-state"]:[]); }
+function notExported(el){ return !!(el&&((el.classList&&(el.classList.contains("lw-bar-row")||el.classList.contains("lw-tabs")))||notExportedIds().indexOf(el.id)>=0)); }
+// The HTML export bakes the chart to an image, which can't follow the reader's theme, so it is drawn
+// in colors that read on light and dark. The PDF is drawn in the light theme.
+const CHART_BOTH={ accent:"#FF4876", grid:"rgba(128,128,128,.25)", muted:"#8A8F98" };
+async function withChart(pal,fn){ const d=(CURVIEW||SNAPSHOT)[CURRENT]; if(!d) return fn();
+  try{ drawAdoption(d,pal); }catch(e){}
+  try{ return await fn(); }finally{ try{ drawAdoption(d,{}); }catch(e){} } }
+async function inLight(fn){ const root=document.getElementById("lw-root"), had=root.classList.contains("lw-light"); root.classList.add("lw-light");
+  try{ return await withChart({},fn); }finally{ if(!had) root.classList.remove("lw-light"); try{ const d=(CURVIEW||SNAPSHOT)[CURRENT]; if(d) drawAdoption(d,{}); }catch(e){} } }
+function exportable(on){ ["lw-export-pdf","lw-export-caret"].forEach(function(id){ const b=document.getElementById(id); if(b){ b.disabled=!on; b.title=on?(id==="lw-export-caret"?"Other formats":""):"Nothing to export: this launch isn't in this snapshot."; } }); }
+function canExport(){ const b=document.getElementById("lw-body"); if(b&&b.hidden){ hint("Nothing to export: this launch isn't in this snapshot. Pick another tab or snapshot."); return false; } return true; }
 function frozenRoot(){
   const root=document.getElementById("lw-root").cloneNode(true);
   const bar=root.querySelector(".lw-bar-row"); if(bar) bar.remove();
+  notExportedIds().forEach(function(id){ const el=root.querySelector("#"+id); if(el) el.remove(); });
   const lc=document.querySelector("#lw-adoption canvas");
-  if(lc){ try{ const url=lc.toDataURL("image/png"); const host=root.querySelector("#lw-adoption"); if(host) host.innerHTML='<img src="'+url+'" style="width:100%">'; }catch(e){} }
+  if(lc&&SMALL){ const host=root.querySelector("#lw-adoption"); if(host) host.innerHTML='<div class="lw-empty">Chart left out to keep this file small.</div>'; }
+  if(lc&&!SMALL){ try{ const url=lc.toDataURL("image/png"); const host=root.querySelector("#lw-adoption"); if(host) host.innerHTML='<img src="'+url+'" style="width:100%">'; }catch(e){} }
   return root;
 }
-function exportHTML(){
-  try{ const style=document.querySelector("style").outerHTML, root=frozenRoot();
+async function exportHTML(){
+  if(!canExport()) return;
+  // Copy OUR stylesheet by id: on a published artifact the first <style> in the document is the
+  // publisher's own reset, not this one. The body takes its colors from the same tokens, so the file
+  // reads in light and dark.
+  try{ const own=document.getElementById("lw-style"), style=own?own.outerHTML:Array.prototype.map.call(document.querySelectorAll("style"),s=>s.outerHTML).join(""), root=await withChart(CHART_BOTH,frozenRoot);
     const src=CURVIEW||SNAPSHOT, nm=(src[CURRENT]&&src[CURRENT].name)||"launch", stamp=src.asOf||"";
-    const doc='<!doctype html><html><head><meta charset="utf-8"><title>Launch Watch - '+nm+' ('+stamp+')</title></head><body style="margin:0;background:#F6F7FB">'+style+root.outerHTML+'</body></html>';
-    downloadBlob(new Blob([doc],{type:"text/html"}), fname("html"));
+    const doc='<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>Launch Watch - '+esc(nm)+' ('+esc(stamp)+')</title>'+style+'<style>body{margin:0;background:var(--bg);color:var(--ink);}</style></head><body>'+root.outerHTML+'</body></html>';
+    saveFile(new Blob([doc],{type:"text/html"}), fname("html"));
   }catch(e){ hint("HTML export not available in this view."); }
 }
-function exportPNG(){
-  try{
-    const style=document.querySelector("style").outerHTML, root=frozenRoot();
-    const base=document.getElementById("lw-root"), w=base.offsetWidth||1040, h=base.scrollHeight||1400;
-    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">'+style+root.outerHTML+'</div></foreignObject></svg>';
-    const img=new Image();
-    img.onload=function(){ const c=document.createElement("canvas"); c.width=w*2; c.height=h*2; const ctx=c.getContext("2d"); ctx.scale(2,2); ctx.fillStyle="#F6F7FB"; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0); try{ c.toBlob(function(b){ b?downloadBlob(b,fname("png")):hint("PNG export not supported here - use PDF or HTML."); }); }catch(e){ hint("PNG export blocked in this view - use PDF or HTML."); } };
-    img.onerror=function(){ hint("PNG export is not supported in this view - use PDF or HTML."); };
-    img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
-  }catch(e){ hint("PNG export not available in this view."); }
+// PDF and PNG are rendered in the page (html2canvas + jsPDF) and saved through the surface's download
+// prompt, because an artifact view silently ignores window.print(). The libraries load on the first
+// export click only (never on page load), pinned to exact versions with SRI. A local file keeps the
+// browser's own print for PDF, which keeps text selectable.
+const EXPORT_LIBS={
+  html2canvas:{ src:"https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js", sri:"sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H", global:"html2canvas" },
+  jspdf:{ src:"https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js", sri:"sha384-qovJwSBbRDPP5cEjCp8S0UP66wrvnjaa60XMOGzTNanrThcrGfXfnZkvgY8N1KT3", global:"jspdf" } };
+const LIB_LOADS={};
+function loadLib(k){ const L=EXPORT_LIBS[k]; if(window[L.global]) return Promise.resolve(window[L.global]);
+  if(!LIB_LOADS[k]) LIB_LOADS[k]=new Promise(function(res,rej){ const s=document.createElement("script"); s.src=L.src; s.integrity=L.sri; s.crossOrigin="anonymous"; s.referrerPolicy="no-referrer";
+    s.onload=function(){ window[L.global]?res(window[L.global]):rej(new Error(k+" missing")); }; s.onerror=function(){ LIB_LOADS[k]=null; rej(new Error(k+" blocked")); }; document.head.appendChild(s); });
+  return LIB_LOADS[k]; }
+// The PDF breaks pages between panels: any block that fits on one page and would be cut moves whole
+// to the next page. Blocks are measured in the copy html2canvas renders, which leaves out the toolbar.
+const PDF_BLOCKS=".lw-head,#lw-partial,#lw-missing,#lw-body>*:not(.lw-grid),.lw-grid>*,.lw-guide,.lw-fr,.lw-fb,.lw-theme,.lw-foot";
+async function renderCanvas(blocks){
+  const h2c=await loadLib("html2canvas");
+  return h2c(document.getElementById("lw-root"),{ backgroundColor:bgColor(), scale:SMALL?1:2, useCORS:true, logging:false, ignoreElements:notExported,
+    onclone:function(doc){ if(!blocks) return; const r=doc.getElementById("lw-root"), top=r.getBoundingClientRect().top; blocks.width=r.getBoundingClientRect().width;
+      Array.prototype.forEach.call(r.querySelectorAll(PDF_BLOCKS),function(el){ const b=el.getBoundingClientRect(); if(b.height>0) blocks.push([b.top-top,b.bottom-top]); }); } });
 }
-function exportPDF(){ try{ window.focus(); window.print(); }catch(e){ hint("Use your browser's Print, then Save as PDF."); } }
+// Page cuts (in CSS px) for content of height H on pages of height P: never inside a block that fits.
+function pdfBreaks(H,P,blocks){ const cuts=[]; let start=0;
+  while(start+P<H){ let end=start+P;
+    blocks.forEach(function(b){ if(b[0]>start+1&&b[0]<end&&b[1]>end&&(b[1]-b[0])<=P) end=Math.min(end,b[0]-4); });
+    if(end<=start+P/4) end=start+P;
+    cuts.push(end); start=end; }
+  return cuts; }
+const NO_IMAGE_EXPORT="PDF and PNG export aren't available in this view. Use Export > HTML, then open the file and print it to PDF.";
+async function exportPNG(){
+  if(!canExport()) return;
+  hint("Preparing PNG...");
+  try{ const c=await renderCanvas(); const blob=await new Promise(function(r){ c.toBlob(r,"image/png"); }); if(!blob) throw new Error("toBlob");
+    await saveFile(blob,fname("png")); }
+  catch(e){ hint(NO_IMAGE_EXPORT); }
+}
+// The PDF is drawn in the light theme whatever the viewer's theme, so a printed or attached copy reads well.
+async function exportPDF(){
+  if(!canExport()) return;
+  if(location.protocol==="file:"){ const root=document.getElementById("lw-root"); try{ root.classList.add("lw-light"); window.focus(); window.print(); }catch(e){ hint("Use your browser's Print, then Save as PDF."); } finally{ root.classList.remove("lw-light"); } return; }
+  hint("Preparing PDF...");
+  try{
+    const blocks=[]; let bg="#F6F7FB";
+    const both=await Promise.all([inLight(function(){ bg=bgColor(); return renderCanvas(blocks); }), loadLib("jspdf")]), c=both[0], jsp=both[1];
+    const pdf=new jsp.jsPDF({orientation:"portrait",unit:"pt",format:"a4"});
+    const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight(), m=24, iw=pw-2*m;
+    const k=c.width/(blocks.width||c.width), P=(ph-2*m)*(c.width/k)/iw;
+    const cuts=pdfBreaks(c.height/k,P,blocks).map(function(y){ return Math.round(y*k); }).concat([c.height]);
+    for(let p=0,sy=0; p<cuts.length; sy=cuts[p],p++){
+      const h=Math.max(1,cuts[p]-sy), pc=document.createElement("canvas"); pc.width=c.width; pc.height=h;
+      pc.getContext("2d").drawImage(c,0,sy,c.width,h,0,0,c.width,h);
+      if(p) pdf.addPage(); pdf.setFillColor(bg); pdf.rect(0,0,pw,ph,"F");
+      pdf.addImage(pc.toDataURL("image/jpeg",SMALL?0.7:0.92),"JPEG",m,m,iw,h*iw/c.width);
+    }
+    await saveFile(pdf.output("blob"),fname("pdf"));
+  }catch(e){ hint(NO_IMAGE_EXPORT); }
+}
 function buildTabs(){ const tabs=document.getElementById("lw-tabs"); if(CONFIG.launches.length<2){ tabs.style.display="none"; return; }
-  tabs.innerHTML=CONFIG.launches.map((L,i)=>`<div class="lw-tab ${i===0?'active':''}" data-k="${L.key}">${esc(L.name)}</div>`).join("");
-  tabs.querySelectorAll(".lw-tab").forEach(t=>t.onclick=()=>{tabs.querySelectorAll(".lw-tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");CURRENT=t.dataset.k;showCurrent();}); }
+  tabs.innerHTML=CONFIG.launches.map((L,i)=>`<div class="lw-tab ${i===0?'active':''}" data-k="${esc(L.key)}">${esc(L.name)}</div>`).join("");
+  tabs.querySelectorAll(".lw-tab").forEach(t=>t.onclick=()=>{tabs.querySelectorAll(".lw-tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");CURRENT=t.dataset.k;if(CURVIEW) render(CURVIEW,CURRENT); else showCurrent();}); }
 document.getElementById("lw-generate").onclick=generatePin;
 document.getElementById("lw-back").onclick=showCurrent;
 document.getElementById("lw-export-pdf").onclick=function(){ document.getElementById("lw-export-menu").hidden=true; exportPDF(); };
@@ -494,4 +817,5 @@ document.getElementById("lw-export-pdf").onclick=function(){ document.getElement
 // A local file (file://) has no artifact toolbar, so don't point at one.
 if(location.protocol==="file:") hint("Snapshot file, shareable with your team. It includes customer quotes, so check it before sharing outside your team. Export a frozen copy for leadership; to update the numbers, re-run the skill ('refresh my launch watch').");
 buildTabs(); showCurrent();  // PINNED by default - no connector call on load
+initHost();
 </script>
