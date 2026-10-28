@@ -5,7 +5,7 @@ license: MIT. LICENSE has complete terms
 compatibility: Standalone — no required connectors. Pendo MCP (adoption data) and Pendo Listen (customer feedback) are used opportunistically, if connected, to ground inferred scores in evidence.
 metadata:
   author: Pendo Product Operations
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # GTM Scoring Skill
@@ -13,6 +13,11 @@ metadata:
 Produces one GTM score for whatever scope it is handed: a launch a user
 describes directly, an initiative (when called from a conviction-doc
 skill), or a single feature (when called from a feature-creation skill).
+
+The four dimensions, their levels and the tier thresholds below are a
+basic example to start from, not a standard to adopt as is. To fit them
+to your own launch process, edit them once in this file (see the note
+under the tier thresholds table), and every caller inherits the change.
 
 A **conviction doc** is a short pre-build statement of belief for an
 initiative: the problem, who has it, the evidence, and what would prove
