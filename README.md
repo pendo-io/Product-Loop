@@ -10,7 +10,7 @@ Every skill is backed by live data from your Pendo subscription.
 
 Works with Claude Code, the Claude apps, and Cowork.
 
-These are community skills from Pendo's product team, provided as is under the MIT license. They are not a supported Pendo product.
+**Community skills, provided as is.** These skills are shared by Pendo’s product team under the MIT License. They are not a supported Pendo product, and there is no SLA or warranty. You are responsible for the data you connect and only use sources you are authorized to use.
 
 ---
 
