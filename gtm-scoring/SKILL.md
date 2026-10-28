@@ -16,8 +16,8 @@ skill), or a single feature (when called from a feature-creation skill).
 
 The four dimensions, their levels and the tier thresholds below are a
 basic example to start from, not a standard to adopt as is. To fit them
-to your own launch process, edit them once in this file (see the note
-under the tier thresholds table), and every caller inherits the change.
+to your own launch process, edit them once in this file, and every
+caller inherits the change.
 
 A **conviction doc** is a short pre-build statement of belief for an
 initiative: the problem, who has it, the evidence, and what would prove
