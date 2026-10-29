@@ -1,8 +1,8 @@
 ---
 name: field-qual-producer
-description: 'Produces a daily digest of the qualitative field signal from recent customer calls on a PM''s product areas: what customers and prospects say on calls the PM wasn''t on, and the recurring cross-account themes they''d miss. Searches all calls by topic in any connected call-recording tool, with verbatim quotes and speaker affiliation; falls back to a watch-list of accounts, then to pasted transcripts or notes. Counts calls the PM attended toward convergence but never surfaces them as new, and renders a short digest in chat plus a structured update a digest composer can fold in. Single owner of the cross-account customer-call signal for a PM''s areas. Not for single-account or deal research (use an account-research skill) or composing the digest (use attention-radar). Read-only on call, CRM and tracker tools; writes only its own config and, if opted in, one Slack post. Works on demand or daily. Triggers: "scan calls", "what are customers saying about X", "field signal", "call mentions", "run the field monitor".'
+description: 'Produces a daily digest of the qualitative field signal from recent customer calls on a PM''s product areas: what customers and prospects say on calls the PM wasn''t on, and the recurring cross-account themes they''d miss. Searches all calls by topic in any connected call-recording tool, with verbatim quotes and speaker affiliation; falls back to a watch-list of accounts, then to pasted transcripts or notes. Counts calls the PM attended toward convergence but never surfaces them as new, and renders a short digest in chat plus a structured update a digest composer can fold in. Single owner of the cross-account customer-call signal for a PM''s areas. Not for single-account or deal research (use an account-research skill) or composing the digest (use digest-composer). Read-only on call, CRM and tracker tools; writes only its own config and, if opted in, one Slack post. Works on demand or daily. Triggers: "scan calls", "what are customers saying about X", "field signal", "call mentions", "run the field monitor".'
 license: MIT. LICENSE has complete terms
-compatibility: Standalone. No required connectors or skills; works from pasted call transcripts or notes. Optional connectors used if present, a call-recording tool with transcript search (for example Gong's official MCP), a feature tracker (Notion, Jira, or similar) to map hits to features, a CRM for deal name and stage, and Slack for an opt-in deeper digest. Optional companions, attention-radar and feedback-idea-producer.
+compatibility: Standalone. No required connectors or skills; works from pasted call transcripts or notes. Optional connectors used if present, a call-recording tool with transcript search (for example Gong's official MCP), a feature tracker (Notion, Jira, or similar) to map hits to features, a CRM for deal name and stage, and Slack for an opt-in deeper digest. Optional companions, digest-composer and feedback-idea-producer.
 metadata:
   author: Pendo Product Operations
   version: "1.0.0"
@@ -23,7 +23,7 @@ A **producer**: it owns one source (customer call transcripts) and produces a sh
 update each run. It works two ways:
 
 - **Run alone (default).** It renders its own readable digest in chat (see **Standalone digest**).
-- **Inside a daily digest.** A digest composer such as `attention-radar`, or an orchestrator that runs
+- **Inside a daily digest.** A digest composer such as `digest-composer`, or an orchestrator that runs
   producers daily, consumes its **structured output** (Step 9) and folds it into the digest's existing
   💬 From the field & feedback category. The producer then adds no section of its own. Both are
   available at https://github.com/pendo-io/Product-Loop. Neither is required.
@@ -46,7 +46,7 @@ or has PMs reporting to them.
   is present or carries its "no call signal this window" line; `coverage_note` is present in
   account mode; `field_qual.reported` is updated, or the digest says dedup was not saved. A quiet
   run is the one calm line.
-- **Next consumer:** `attention-radar` or a daily-digest conductor, which folds it into
+- **Next consumer:** `digest-composer` or the `daily-digest` conductor, which folds it into
   💬 From the field & feedback. Run alone, the person who asked.
 - **Intent:** cross-account convergence over completeness. A quiet day beats a mislabeled hit.
 

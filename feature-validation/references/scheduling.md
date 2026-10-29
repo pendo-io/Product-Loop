@@ -21,7 +21,7 @@ The skill can't register the task itself; the host requires the user's explicit 
    feature_validation section of config.json in this workspace.
    ```
 
-   If you use the daily-digest-conductor, write `.daily-digest/config.json` in place of `config.json`, since that's where this skill's section lives.
+   If you use the `daily-digest` conductor, write `.daily-digest/config.json` in place of `config.json`, since that's where this skill's section lives.
 
 4. Pick **daily** (recommended) and a time the machine is usually awake. Mid-morning is a good default so the PM can resolve staged items during the workday.
 5. Confirm. The task appears under scheduled tasks.

@@ -52,7 +52,7 @@ Each bundle installs one stage's skills. `product-loop` installs all of them. Bu
 | Bundle | Skills |
 |---|---|
 | `product-loop` | Every skill below |
-| `product-loop-monitor` | pulse, weekly-prio, feedback-idea-producer, field-qual-producer, support-trends-producer, engineering-progress-producer, competitor-release-producer, attention-radar, daily-digest-conductor, feature-validation, product-manager-weekly-update, product-lead-weekly-update |
+| `product-loop-monitor` | pulse, weekly-prio, feedback-idea-producer, field-qual-producer, support-trends-producer, engineering-progress-producer, competitor-release-producer, digest-composer, daily-digest, feature-validation, product-manager-weekly-update, product-lead-weekly-update |
 | `product-loop-uncover` | funnel-dropoff-investigator, friction-finder |
 | `product-loop-validate` | conviction-doc, gtm-scoring, prototype-fidelity |
 | `product-loop-launch` | feature-creation, release-note-drafter, product-announcement-generator, release-kit |
@@ -74,8 +74,8 @@ Keep a constant pulse on what's happening.
 | [`support-trends-producer`](./support-trends-producer/) | Support-ticket themes spiking or fading in your areas, plus tickets waiting on engineering with no linked bug |
 | [`engineering-progress-producer`](./engineering-progress-producer/) | What shipped, what's blocked, and what newly broke in your issue tracker (Jira, GitHub Issues, Linear, and others) since the last run |
 | [`competitor-release-producer`](./competitor-release-producer/) | Delta-only read of competitor releases that touch your product areas |
-| [`attention-radar`](./attention-radar/) | Folds the producer skills' output into one short daily digest, one linked sentence per item |
-| [`daily-digest-conductor`](./daily-digest-conductor/) | Runs your daily skills on their own cadence and posts one digest: what it handled, what needs your OK, what needs you |
+| [`digest-composer`](./digest-composer/) | Folds the producer skills' output into one short daily digest, one linked sentence per item |
+| [`daily-digest`](./daily-digest/) | Runs your daily skills on their own cadence and posts one digest: what it handled, what needs your OK, what needs you |
 | [`feature-validation`](./feature-validation/) | Checks your feature records are still accurate and brings back only the ones that need a human |
 | [`product-manager-weekly-update`](./product-manager-weekly-update/) | Drafts a PM's weekly status update from the week's meeting notes, Slack, docs, and owned features |
 | [`product-lead-weekly-update`](./product-lead-weekly-update/) | Rolls a team's PM updates into one leadership update and flags where they disagree with other sources |

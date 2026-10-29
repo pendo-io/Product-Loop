@@ -1,8 +1,8 @@
 ---
 name: engineering-progress-producer
-description: 'Produces a delta-only digest of engineering progress for a PM from any issue tracker: Jira, GitHub Issues, Linear, Azure DevOps, Shortcut, or a pasted export. Reads the PM''s boards, projects, or repos, pulls what changed since the last run, and surfaces what SHIPPED, what''s BLOCKED, what NEWLY BROKE, and what got DECIDED, customer-facing first, focusing on what the PM might have MISSED. Measures that movement against each feature''s description and goals, then renders a short digest (🔴 act; 🚢 shipped, in-flight, blocked, decisions; ⚠️ heads-up; 🟡 confirm) and, with a digest composer, a structured update. Single owner of the issue-tracker delta for the daily digest. Not for drafting release notes (use release-note-drafter) or composing the digest (use attention-radar). Runs on demand or daily; optionally drafts a weekly team-channel summary, posted only after approval. Triggers: "engineering progress", "what shipped", "what''s blocked", "what broke", "sprint progress", "jira digest", "github issues digest".'
+description: 'Produces a delta-only digest of engineering progress for a PM from any issue tracker: Jira, GitHub Issues, Linear, Azure DevOps, Shortcut, or a pasted export. Reads the PM''s boards, projects, or repos, pulls what changed since the last run, and surfaces what SHIPPED, what''s BLOCKED, what NEWLY BROKE, and what got DECIDED, customer-facing first, focusing on what the PM might have MISSED. Measures that movement against each feature''s description and goals, then renders a short digest (🔴 act; 🚢 shipped, in-flight, blocked, decisions; ⚠️ heads-up; 🟡 confirm) and, with a digest composer, a structured update. Single owner of the issue-tracker delta for the daily digest. Not for drafting release notes (use release-note-drafter) or composing the digest (use digest-composer). Runs on demand or daily; optionally drafts a weekly team-channel summary, posted only after approval. Triggers: "engineering progress", "what shipped", "what''s blocked", "what broke", "sprint progress", "jira digest", "github issues digest".'
 license: MIT. LICENSE has complete terms
-compatibility: Standalone. Works on a pasted tracker export or change list with no connectors. Optional, used if present - an issue tracker connector or CLI (Jira, GitHub Issues via gh, Linear, Azure DevOps, Shortcut), a feature tracker such as Notion, Jira, or Airtable (feature description and goals), Slack (weekly team summary, draft-first). Optional companions - attention-radar and the support-trends-producer hand-off.
+compatibility: Standalone. Works on a pasted tracker export or change list with no connectors. Optional, used if present - an issue tracker connector or CLI (Jira, GitHub Issues via gh, Linear, Azure DevOps, Shortcut), a feature tracker such as Notion, Jira, or Airtable (feature description and goals), Slack (weekly team summary, draft-first). Optional companions - digest-composer and the support-trends-producer hand-off.
 metadata:
   author: Pendo Product Operations
   version: "1.0.0"
@@ -22,7 +22,7 @@ update each run.
 
 - **Run alone**, it renders its own readable digest in chat (see "Standalone digest").
 - **Run inside a daily digest**, it hands a structured update to a digest composer such as
-  `attention-radar`, or an orchestrator that runs producers daily. The composer folds it into the
+  `digest-composer`, or an orchestrator that runs producers daily. The composer folds it into the
   digest's *existing* categories; this producer adds **no section of its own** there. Both skills are
   in https://github.com/pendo-io/Product-Loop. If neither is installed, you don't need them: the
   standalone digest is the complete output.
@@ -38,7 +38,7 @@ recreating the tracker's UI.
 - **Done when:** every surfaced item carries a complete link (or the key in plain text in pasted
   mode), what changed, who (or "who: unknown"), and when; every board either produced items, the
   calm line, or a named gap; the structured block has the keys in Step 6.
-- **Next consumer:** `attention-radar` or a daily-digest conductor, which folds items into its
+- **Next consumer:** `digest-composer` or the `daily-digest` conductor, which folds items into its
   existing categories. Run alone, the person who asked.
 - **Intent:** discovery, not a standup readout. When steps run out, surface the departures from
   plan and name what couldn't be checked.
@@ -471,7 +471,7 @@ conflicts: [ { key, with, boundary, link } ]                                    
 decisions: [ { key, summary, resolution, feature, goal_context: "toward|slipping|blocked", who, when, link, new_since_last_run } ]  # -> 🚢 (factual heads-up; leader-level at PL altitude)
 cross_links: [ { jira_key, related: "feedback_theme|adoption_signal|competitor_release", note } ]   # competitor_release: the item bears on a competitor move the competitor-release producer reported
 staged_actions: [ { kind: map_epic_to_feature, epic_key, suggested_feature, candidate_features } ]                              # -> 🟡 (new epic: propose best-guess feature to confirm)
-provenance_note: each item's `key` IS its `jira:<KEY>` provenance for the composer (on any tracker, the tracker's issue ref); `eng_wait_reconciled` also carries `support_ticket` + `jira_key`, and `cross_links` carry `jira_key`. The composer dedups on these (a tracker issue linked from a support ticket collapses to one item). See the attention-radar provenance-key rule.
+provenance_note: each item's `key` IS its `jira:<KEY>` provenance for the composer (on any tracker, the tracker's issue ref); `eng_wait_reconciled` also carries `support_ticket` + `jira_key`, and `cross_links` carry `jira_key`. The composer dedups on these (a tracker issue linked from a support ticket collapses to one item). See the digest-composer provenance-key rule.
 set_aside_count: <# the PM's own driven progress + routine + already-seen-by-PM issues, not surfaced>
 ```
 

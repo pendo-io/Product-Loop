@@ -33,7 +33,7 @@ If step 1 finds a saved voice, use it and skip steps 2 and 3. Otherwise check bo
 
 ## Saving
 
-Save only after the user confirms. Write the `product_announcement` section of a shared config file, by default `config.json` in the user's working folder. If the daily-digest-conductor's shared config (`.daily-digest/config.json` in the workspace) exists, use this skill's section of that file instead. Keep other sections, and the other keys in this section (such as `setup` and `glossary`), untouched. Shape: `config.example.json`.
+Save only after the user confirms. Write the `product_announcement` section of a shared config file, by default `config.json` in the user's working folder. If the `daily-digest` conductor's shared config (`.daily-digest/config.json` in the workspace) exists, use this skill's section of that file instead. Keep other sections, and the other keys in this section (such as `setup` and `glossary`), untouched. Shape: `config.example.json`.
 
 Save a pointer to the source (`source_skill` for a skill, `source_refs` for memory or instruction files) plus the confirmed summary. Never copy a whole skill's or instruction file's content into config. If there's no writable folder, use the voice for this session only and say so.
 

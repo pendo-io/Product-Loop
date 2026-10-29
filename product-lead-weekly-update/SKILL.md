@@ -200,7 +200,7 @@ the PM and date from the text or ask once.
    `pm_updates`, `sources`, `output`, `template`, `style`, `review_step`,
    `schedule`.
 2. **Determine the window.** First find the rollup day: under the
-   daily-digest-conductor it is the conductor's `cadence` for this skill
+   `daily-digest` conductor it is the conductor's `cadence` for this skill
    (`weekly-<day>`) and `schedule.day` is not used; run alone, it is
    `schedule.day`. If neither is set, use the first working day of the
    lead's week and say in the draft's handoff note that it's the default. Run on the rollup day, the window
@@ -335,7 +335,7 @@ one; otherwise show short numbered options. Ask free-text questions
 The skill works on demand. To run it weekly, register a scheduled task in
 your client (for example `/schedule` in Claude Cowork or Claude Code) with
 the prompt: "Run the product-lead-weekly-update skill. It reads its config
-from config.json." If you use the daily-digest-conductor, point the prompt
+from config.json." If you use the `daily-digest` conductor, point the prompt
 at `.daily-digest/config.json` instead, since that's where this skill's
 section lives, and don't register a task or fill `schedule` (the
 conductor's `cadence` holds the day). Default: early on your team's

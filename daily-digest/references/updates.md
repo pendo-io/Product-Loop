@@ -38,6 +38,30 @@ Read, in order: a `## Requirements` section in the incoming skill (connectors, c
 
 On an **unattended** run, apply only non-destructive changes and defer every removal and core-change confirm to the next attended run.
 
+## Renamed skills (1.1.0)
+
+Version 1.1.0 renamed two skills. This is the migration map; it is the only place the conductor matches the old names.
+
+| Old name | New name | Old copy after the update |
+|---|---|---|
+| `daily-digest-conductor` | `daily-digest` | Deprecated stub that forwards here; removed in a later release |
+| `attention-radar` | `digest-composer` | Deprecated stub that points here; removed in a later release |
+| task `daily-digest-conductor-daily` | task `daily-digest-daily` | Retired at the next attended run (below) |
+| task `daily-digest-conductor-<member>` | task `daily-digest-<member>` | Same as the daily task |
+
+Run it on the first run that finds an old name in `enabled_skills[].name`, an `installed_skills` key, a `members` value, `last_run.skills_ran`, or `schedule.companion_tasks`, or finds `_meta.conductor_version` below 1.1.0. It is a clean rename (case E), so it runs on an unattended run too.
+
+1. **Back up first.** Copy `config.json` to `config.bak.json` and `activity-log.jsonl` to `activity-log.bak.jsonl`, then re-read both copies. If either backup can't be written, stop: change nothing and raise one 🔴 line saying the update is waiting for a writable config home.
+2. **Rename in `config.json`**, using the map: `enabled_skills[].name`, the `installed_skills` keys, `members` values, `last_run.skills_ran`, `carryover.items[].skill`, `schedule.companion_tasks`, and `_meta.provenance` keys that contain a skill name. If both the old and the new key exist in `installed_skills`, keep the new entry and carry over `mute_reminder: true` from the old one. Leave cadence, status and every other value as they are.
+3. **Set `members.composer` to `digest-composer`**, unless the user pointed it at some other skill (case F: keep theirs).
+4. **Rename the `skill` field in past activity-log rows** so usage history and the adaptation module see one name per skill, then append one row recording the migration (`bucket: "done"`, `skill: "daily-digest"`, summary "renamed skills after the 1.1.0 update", `revert_hint: "restore config.bak.json and activity-log.bak.jsonl"`).
+5. **Don't touch** the config home `.daily-digest/` (every user's config path depends on it), the `radar` block (it isn't keyed by skill name), `competitor_radar`, or `digest.report_name`, even when it reads like an old skill name: the user chose it.
+6. **Bump `_meta.conductor_version` to `1.1.0`**, record provenance, and re-read `config.json`.
+7. **Hand over the scheduled task** (`references/scheduling.md` → "Handing over from the old task id"). On an unattended run, skip this step: the old task keeps working through the stub, so the user still gets exactly one digest. Every later attended run offers the handover until it's done or declined (`references/daily-run.md` step 1), so it doesn't depend on this migration running again.
+8. **Report it once** in the next digest, under ✅: the two new names, the backup files, and, if the task isn't handed over yet, a 🟡 asking to do it.
+
+Running it twice is harmless: the second run finds no old names and stops after step 1's check.
+
 ## Apply, ask, report
 
 1. **Back up** `config.json` to `config.bak.json` first.

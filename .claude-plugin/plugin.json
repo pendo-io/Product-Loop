@@ -1,7 +1,7 @@
 {
   "name": "product-loop",
   "description": "How the best product builders use Pendo: Claude skills for every stage of the product cycle",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Pendo",
     "email": "product@pendo.io"

@@ -188,7 +188,7 @@ Re-setup triggers such as "update my Slack sources", "change my schedule",
    that run's status is `delivered` or `published`, or the last 7 days
    ending today if there's no earlier update. Always use the actual
    current date; a delayed scheduled run still ends the window today.
-   **Update day:** under the daily-digest-conductor, the day is the
+   **Update day:** under the `daily-digest` conductor, the day is the
    conductor's `cadence` for this skill (`weekly-<day>`) and
    `schedule.day` is not used; run alone, it is `schedule.day`. If
    neither is set, use the last working day of the user's week and
@@ -265,7 +265,7 @@ The skill works on demand. To run it weekly, register a scheduled task in
 whatever your client offers (for example `/schedule` in Claude Cowork or
 Claude Code) with the prompt: "Run the product-manager-weekly-update skill. It reads its
 config from its section of config.json (see Config)." If you use the
-daily-digest-conductor, point the prompt at `.daily-digest/config.json`
+`daily-digest` conductor, point the prompt at `.daily-digest/config.json`
 instead, since that's where this skill's section lives. Default: late in
 the day on your team's update day, in the user's timezone, leaving time to
 review before the day ends; if the user doesn't name a day, use the last

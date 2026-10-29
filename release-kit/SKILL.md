@@ -83,7 +83,7 @@ The model judges everything that makes the copy good: the positioning angle and 
 ## Config and first-run setup
 
 Settings live in the `release_kit` section of a shared config file, by default
-`config.json` in the user's working folder. If the daily-digest-conductor's shared
+`config.json` in the user's working folder. If the `daily-digest` conductor's shared
 config (`.daily-digest/config.json` in the workspace) exists, use this skill's section
 of that file instead (shape in `config.example.json`). Keep other sections untouched.
 

@@ -1,7 +1,7 @@
 {
   "_comment": "Shape reference for config.json. The conductor writes the real file to <workspace>/.daily-digest/config.json during setup (references/onboarding.md). All values here are placeholders.",
   "_meta": {
-    "conductor_version": "1.0.0",
+    "conductor_version": "1.1.0",
     "provenance": {
       "_note": "Keyed by config dot-path. set_by: spec_default | user | inferred | learned. base_value = the default at the time. See references/updates.md.",
       "schedule.time": {
@@ -78,7 +78,7 @@
       "status": "configured"
     },
     {
-      "name": "attention-radar",
+      "name": "digest-composer",
       "cadence": "every_run_last",
       "status": "configured"
     }
@@ -99,7 +99,8 @@
   },
   "members": {
     "_note": "Optional role -> skill-name overrides, for when a member is installed under a different name, or two installed skills match one role.",
-    "support_trends": "support-trends-producer"
+    "support_trends": "support-trends-producer",
+    "composer": "digest-composer"
   },
   "sources": [
     {
@@ -222,7 +223,7 @@
     }
   },
   "radar": {
-    "_note": "Digest settings, passed to attention-radar as its radar config. dismissed_conflicts = pairs the user marked intentionally parallel. call_notes_source = the call-notes provider resolved at setup; the conductor uses it to pick which call source to pass field-qual-producer. attention-radar never reads a source itself.",
+    "_note": "Digest settings, passed to digest-composer as its radar config. dismissed_conflicts = pairs the user marked intentionally parallel. call_notes_source = the call-notes provider resolved at setup; the conductor uses it to pick which call source to pass field-qual-producer. digest-composer never reads a source itself.",
     "call_notes_source": null,
     "include_email": false,
     "discovery": {
@@ -246,6 +247,7 @@
       "other"
     ],
     "inferred_from_calendar": false,
+    "task_id": "daily-digest-daily",
     "companion_tasks": []
   },
   "digest": {

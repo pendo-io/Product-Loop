@@ -31,7 +31,7 @@ This skill has two modes and, within a run, two phases:
 
 - **Result:** a validation report in chat. Every due feature sits in exactly one tier: Tier A (validated by Agent, with its audit line), Tier C (proposed edits with evidence), or Tier B (confirm as-is). In tracker mode, Tier A stamps are written to the tracker.
 - **Done check:** every due feature appears in exactly one tier with its audit line or staged values; shipped and other PMs' features appear nowhere; if config is saved, `last_run` holds the timestamp, per-tier counts, and status, and `state.json.pending_resolution` matches the Tier B/C queue shown in chat. Phase 2 is done when the queue is empty and `pending_resolution` is cleared.
-- **Next consumer:** the PM, in this chat. If `daily-digest-conductor` runs this skill, it reads the tiers (Tier A as done, Tier B/C and the backfill offer as needing the PM's OK). A later session resumes the queue from `state.json`, not from this conversation.
+- **Next consumer:** the PM, in this chat. If the `daily-digest` conductor runs this skill, it reads the tiers (Tier A as done, Tier B/C and the backfill offer as needing the PM's OK). A later session resumes the queue from `state.json`, not from this conversation.
 - **Intent:** when the steps don't cover a case, protect the trustworthiness of the feature records. Absence of evidence is never confidence; when torn between Tier A and Tier B, choose Tier B.
 
 ## Boundaries and authority
@@ -76,7 +76,7 @@ The model judges: whether each field is corroborated, uncorroborated, or contrad
 
 ## Step 0b: Config check
 
-Look for this skill's config: the `feature_validation` section of `config.json` in the connected workspace folder (if `daily-digest-conductor` manages a shared config at `<workspace>/.daily-digest/config.json`, use that file's `feature_validation` section). Throughout this skill, `config.*` means that section.
+Look for this skill's config: the `feature_validation` section of `config.json` in the connected workspace folder (if the `daily-digest` conductor manages a shared config at `<workspace>/.daily-digest/config.json`, use that file's `feature_validation` section). Throughout this skill, `config.*` means that section.
 
 - **Config present** → skip to *Validation run flow*.
 - **Absent** → follow `references/setup.md`. For a one-shot run, collect only what this run needs (feature list, sources) and offer to save it at the end.

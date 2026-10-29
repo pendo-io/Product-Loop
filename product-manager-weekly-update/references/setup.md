@@ -163,7 +163,7 @@ The skill needs to know which features the PM owns.
 
 If the user doesn't name a day, use the last working day of their week
 and say it's the default. Under the
-daily-digest-conductor, skip this step: the conductor stores the day as
+`daily-digest` conductor, skip this step: the conductor stores the day as
 its `cadence` for this skill. Then time (default: late in that day, with
 time left to review) and timezone if unknown. Then give the user the
 scheduling steps in SKILL.md → "Scheduling (optional)". The skill can't
