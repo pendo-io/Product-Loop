@@ -46,7 +46,7 @@ There is **no upper limit** on sources. Past ~25 sources for one member in a run
 | `pendo_listen` | Pendo MCP | subscription id + product-area ids | feedback items and insights | feedback-idea-producer |
 | `email_thread` | an email connector | query / label | search relevant threads in the window (read-only) | none yet (no current member reads email; set `consumers` when one does) |
 
-`digest` is a pseudo-consumer meaning "feed the conductor's own Exec roll-up," not a specific member. `attention-radar` is never a source consumer: it reads only the producers' outputs, so a source reaches the digest through the producer that reads it.
+`digest` is a pseudo-consumer meaning "feed the conductor's own Exec roll-up," not a specific member. `digest-composer` is never a source consumer: it reads only the producers' outputs, so a source reaches the digest through the producer that reads it.
 
 ### Call notes: a fallback chain, not a single source
 
@@ -88,7 +88,7 @@ At setup and run start, compute the connector union from enabled sources plus en
 
 ## Record vs. source of reality
 
-A tracker is where current reality is **recorded**; it is rarely where that reality is **created**. Customer calls, product usage, feedback, and live team discussion show change first; the roadmap record lags. attention-radar's fixed category order reflects this (customer signal first, the record last), and when a producer's signal disagrees with the record, the digest surfaces the record as possibly stale rather than trusting it by default. A single uncorroborated signal never overrides a settled record. Feature validation and the weekly writers still treat the tracker as their target of truth.
+A tracker is where current reality is **recorded**; it is rarely where that reality is **created**. Customer calls, product usage, feedback, and live team discussion show change first; the roadmap record lags. The digest-composer's fixed category order reflects this (customer signal first, the record last), and when a producer's signal disagrees with the record, the digest surfaces the record as possibly stale rather than trusting it by default. A single uncorroborated signal never overrides a settled record. Feature validation and the weekly writers still treat the tracker as their target of truth.
 
 ## New source types arriving via an update
 

@@ -31,7 +31,9 @@ Personalized per user and safe to run on the user's behalf.
 | `support-trends-producer` (**producer**) | Support trends | PM/PL (their focus areas) | Daily | A support desk (for example Zendesk) or a CSV export; tracker optional | Delta **support-ticket trends** across the PM's features, themes whose volume deviates from baseline, the PM might have **missed**; read-only on its sources, writes only its own config (stages actions) | 💬 (primary); 🟡 staged actions (content ticket / defect / link to an existing idea); account facts handed to the composer for ⚠️ |
 | `field-qual-producer` (**producer**) | Field calls | PM/PL (their focus areas + watch accounts, the customer accounts the PM follows) | Daily | A call recorder (for example Gong); tracker optional | Recent calls' qualitative **field signal** on the PM's areas and the convergent cross-account themes they'd **miss**; marks the PM's own calls as attended (they count toward convergence, never surfaced as new); read-only on its sources, writes only its own config (stages actions) | 💬 (primary); 🟡 staged actions (link to an existing idea) |
 | `competitor-release-producer` (**producer**) | Competitor releases | PM/PL (their focus areas) | Daily | The user's competitor-release tracker (a database or list), changelogs or feeds via web fetch, or pasted notes | Delta **competitor releases** relevant to the user, scoped to their areas; resolves a release to an owned feature for cross-linking; asks a yes/no relevance question for unclassified releases; **read-only**; its settings live in the shared `competitor_radar` block | 🧭 Competitive watch (conditional); 🟡 relevance questions |
-| `attention-radar` (**composer**) | Digest composer | Everyone | Every run, **last** | none | The composed digest body | The digest body |
+| `digest-composer` (**composer**) | Digest composer | Everyone | Every run, **last** | none | The composed digest body | The digest body |
+
+Before 1.1.0 the composer and the conductor had other names; `references/updates.md` → "Renamed skills" maps them, and the migration there renames them in a saved config. A skill installed under an old name that is now a deprecated stub never matches a role.
 
 Producers fold into the composer's existing categories and add no section of their own, except the competitor-release producer, which feeds the conditional 🧭 lens.
 
@@ -70,7 +72,7 @@ The conductor creates or references conviction docs; it never creates PRDs.
 
 Every member is either **core** (offered at first run, role-matched) or **optional** (offered later via the nudge in `references/optional-skills.md`). This keeps first-run setup focused while letting the catalog grow.
 
-**Core:** `attention-radar`, `feature-validation`, `product-manager-weekly-update` (PM) / `product-lead-weekly-update` (PL), plus the **producers**: feedback and ideas, engineering progress, support trends, field calls, and competitor releases.
+**Core:** `digest-composer`, `feature-validation`, `product-manager-weekly-update` (PM) / `product-lead-weekly-update` (PL), plus the **producers**: feedback and ideas, engineering progress, support trends, field calls, and competitor releases.
 
 **Optional (offered later, never auto-enabled):**
 - *Producers not yet published*: a launch-adoption monitor (emits a delta adoption line into 📈; distinct from `launch-watch`, which is a standalone dashboard, not a composer feed), analytics trends, and so on.
@@ -81,8 +83,8 @@ Every member is either **core** (offered at first run, role-matched) or **option
 
 Present the core set pre-selected in the setup checklist; the user adjusts. Confirm the role first.
 
-- **Product Manager (PM)** → `feature-validation` (daily) and `product-manager-weekly-update` (weekly), plus the installed producers and `attention-radar`. Surface on-demand members as suggestions.
-- **Product Lead (PL)** → `product-lead-weekly-update` (weekly), `feature-validation` for their own owned features, plus the installed producers and `attention-radar`. Add `product-manager-weekly-update` only if the PL personally owns features and wants a personal weekly update.
+- **Product Manager (PM)** → `feature-validation` (daily) and `product-manager-weekly-update` (weekly), plus the installed producers and `digest-composer`. Surface on-demand members as suggestions.
+- **Product Lead (PL)** → `product-lead-weekly-update` (weekly), `feature-validation` for their own owned features, plus the installed producers and `digest-composer`. Add `product-manager-weekly-update` only if the PL personally owns features and wants a personal weekly update.
 - **Exec** → a **rolled-up, mostly read** digest: summarize the latest PL and PM updates across product areas rather than writing personal updates. `conviction-doc` is especially relevant: the roll-up can show which initiatives have READY vs not-READY conviction docs.
 - **Other** (any other product-team role) → the same per-user members scoped to their own owned features.
 
@@ -112,4 +114,4 @@ A generic five-stage product lifecycle. Map the user's own stage names onto it i
 | **Launch** | Tell customers and the field what shipped | `release-note-drafter`, `product-announcement-generator` |
 | **Measure** | See how a release is landing and what to change | `launch-watch`, plus the Discover producers watching for post-release feedback and tickets |
 
-`daily-digest-conductor`, `attention-radar`, and the weekly writers (`product-manager-weekly-update`, `product-lead-weekly-update`) span every stage rather than sitting in one.
+`daily-digest`, `digest-composer`, and the weekly writers (`product-manager-weekly-update`, `product-lead-weekly-update`) span every stage rather than sitting in one.

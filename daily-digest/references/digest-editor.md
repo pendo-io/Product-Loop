@@ -67,7 +67,7 @@ On an **unattended** run there's no one to ask: deliver the static digest (links
 
 Only two affordances are dependable in a chat message: **hyperlinks** and an **interactive question tool** (where the client has one). A plain chat message has **no native "click to expand"**; never rely on one. For "the rest," link to the artifact or log, or invite a follow-up ("ask me to show the rest"). On a **tracker-page** digest, real toggle blocks may be used; in **Slack**, put detail in a thread. Match the affordance to the surface (`references/outputs.md`).
 
-**Every actionable item carries a deep link to the thing it's about**: the staged feature edit, the Jira issue, the connection settings, the tracker record. In Slack, on a tracker page, or on an unattended run there is no live prompt, so the deep link IS the affordance. Never surface a 🟡, 🔴, or ✅ without a link to where it's resolved. If a member handed over no complete URL, cite the item by its provenance reference in plain text (as `attention-radar` does) rather than a partial link. The bracketed options in examples (`[ Review 2 ]`) depict the interactive question; the link beside them is what carries every other surface.
+**Every actionable item carries a deep link to the thing it's about**: the staged feature edit, the Jira issue, the connection settings, the tracker record. In Slack, on a tracker page, or on an unattended run there is no live prompt, so the deep link IS the affordance. Never surface a 🟡, 🔴, or ✅ without a link to where it's resolved. If a member handed over no complete URL, cite the item by its provenance reference in plain text (as `digest-composer` does) rather than a partial link. The bracketed options in examples (`[ Review 2 ]`) depict the interactive question; the link beside them is what carries every other surface.
 
 ## 6. Quiet by default
 
@@ -75,7 +75,7 @@ Most weekdays should be short. If, after capping, an action bucket (✅ / 🟡 /
 
 **Brief but readable, not telegraphic.** Write each item as a short, natural sentence with enough connective tissue to read smoothly at a glance. "Validated 4 features and they're all still accurate" reads; "validated 4 ✓" does not. Aim for one comfortable line per item (a dozen-ish words), in the user's voice setting. The editor caps *how many* items appear; it doesn't strip each one down to fragments.
 
-**The calibration examples in `attention-radar` are the length contract.** If a draft is materially longer than those examples, it's over budget: consolidate (one entry per issue), demote to carryover, or cut. Treat a wall-of-text digest as a bug, not thoroughness.
+**The calibration examples in `digest-composer` are the length contract.** If a draft is materially longer than those examples, it's over budget: consolidate (one entry per issue), demote to carryover, or cut. Treat a wall-of-text digest as a bug, not thoroughness.
 
 ## Config this pass reads/writes
 

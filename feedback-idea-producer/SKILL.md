@@ -1,8 +1,8 @@
 ---
 name: feedback-idea-producer
-description: 'Produces a digest of what customers are saying: pulls recent Pendo Listen feedback for your focus areas (or feedback you paste or export), filters out system-ingested noise, clusters it into typed themes (bug / feature request / pain point / praise), spots what is NEW since the last run, matches top themes to backlog ideas and proposes feedback links for your OK (automatic only if you turn that on), and suggests connecting each matched idea to its feature record. Renders a digest in chat, or a structured update for a digest composer. Single owner of linking Listen feedback to backlog ideas and of the feedback lens in the daily digest. Not for support-ticket trends (use support-trends-producer), call signal (use field-qual-producer), or composing the digest (use attention-radar). Triggers: "what are customers saying", "triage my feedback", "feedback themes", "what should I prioritise", "cluster my feedback", "link feedback to ideas", "daily/weekly feedback digest". Can also run on a schedule.'
+description: 'Produces a digest of what customers are saying: pulls recent Pendo Listen feedback for your focus areas (or feedback you paste or export), filters out system-ingested noise, clusters it into typed themes (bug / feature request / pain point / praise), spots what is NEW since the last run, matches top themes to backlog ideas and proposes feedback links for your OK (automatic only if you turn that on), and suggests connecting each matched idea to its feature record. Renders a digest in chat, or a structured update for a digest composer. Single owner of linking Listen feedback to backlog ideas and of the feedback lens in the daily digest. Not for support-ticket trends (use support-trends-producer), call signal (use field-qual-producer), or composing the digest (use digest-composer). Triggers: "what are customers saying", "triage my feedback", "feedback themes", "what should I prioritise", "cluster my feedback", "link feedback to ideas", "daily/weekly feedback digest". Can also run on a schedule.'
 license: MIT. LICENSE has complete terms
-compatibility: Standalone. Works on pasted or exported feedback with no connectors. Pendo MCP (Pendo Listen feedback and ideas) is the primary optional source and enables idea matching, linking, and ARR. Optional feature tracker (Notion, Jira, Airtable, or similar) for the idea-to-feature suggestion. Optional Slack for posting the digest. Feeds attention-radar if installed.
+compatibility: Standalone. Works on pasted or exported feedback with no connectors. Pendo MCP (Pendo Listen feedback and ideas) is the primary optional source and enables idea matching, linking, and ARR. Optional feature tracker (Notion, Jira, Airtable, or similar) for the idea-to-feature suggestion. Optional Slack for posting the digest. Feeds digest-composer if installed.
 metadata:
   author: Pendo Product Operations
   version: "1.0.0"
@@ -19,7 +19,7 @@ short, structured, **delta-only** update each run. It works two ways:
 
 - **On its own** (the default when nothing else is installed): it renders a readable feedback
   digest in chat (see "Standalone digest" below).
-- **Alongside a digest composer** such as `attention-radar`, or an orchestrator that runs producers
+- **Alongside a digest composer** such as `digest-composer`, or an orchestrator that runs producers
   daily: it hands over the structured output in Step 6, and the composer places it under
   **💬 From the field & feedback** in the daily digest. Those skills are optional and live at
   https://github.com/pendo-io/Product-Loop. If they aren't installed, mention once that they exist
@@ -42,7 +42,7 @@ cares about.
   are present; every applied link is logged with its idea id and feedback ids; `last_run` is
   updated. A quiet run is the calm line with its direction instead of themes. Under a composer, the
   Step 6 object carries every key.
-- **Next consumer:** `attention-radar` or a daily-digest conductor, which places it under
+- **Next consumer:** `digest-composer` or the `daily-digest` conductor, which places it under
   💬 From the field & feedback. Run alone, the person who asked.
 - **Intent:** discovery, not recap. When steps run out, name the gap rather than pad a theme.
 

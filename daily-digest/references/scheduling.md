@@ -12,10 +12,10 @@ Prefer the programmatic path; fall back to guiding the user.
 
 ### Path A: programmatic (if the client exposes a create-scheduled-task tool)
 Register:
-- **task id:** `daily-digest-conductor-daily`
+- **task id:** `daily-digest-daily`. Record it in `schedule.task_id`.
 - **cadence:** daily at the confirmed local time (`schedule.time`, `schedule.timezone`).
 - **prompt:** self-contained, for example:
-  > Run the daily-digest-conductor daily run. Use the config at `{workspace}/.daily-digest/config.json`. Determine which enabled members are due today, run them non-interactively, and post the three-bucket digest (Done on your behalf / Needs your OK / Needs you to act) to this chat. Follow the skill's `references/daily-run.md`.
+  > Run the daily-digest daily run. Use the config at `{workspace}/.daily-digest/config.json`. Determine which enabled members are due today, run them non-interactively, and post the three-bucket digest (Done on your behalf / Needs your OK / Needs you to act) to this chat. Follow the skill's `references/daily-run.md`.
 - **notify on completion:** on, so the digest surfaces.
 
 ### Path B: guided (no scheduling tool)
@@ -33,9 +33,21 @@ Say so plainly and move on: the user runs "run my digest now" each morning. The 
 
 ## Companion tasks (off-cadence members)
 
-A member that needs to run at a time other than the morning digest (for example an afternoon change check) can get a companion task. None of the current members need one. `launch-watch`'s weekly refresh is not a companion task: it is a `weekly-<day>` cadence run by the daily task. Its dashboard's Generate button runs in the page and needs no task; re-pinning is a `launch-watch` run, so nothing for it is recorded in `schedule.companion_tasks`. If a future member's registry row declares a distinct native time, offer a second task `daily-digest-conductor-<member>` at that time, record it in `schedule.companion_tasks`, and register it only when a scheduler exists.
+A member that needs to run at a time other than the morning digest (for example an afternoon change check) can get a companion task. None of the current members need one. `launch-watch`'s weekly refresh is not a companion task: it is a `weekly-<day>` cadence run by the daily task. Its dashboard's Generate button runs in the page and needs no task; re-pinning is a `launch-watch` run, so nothing for it is recorded in `schedule.companion_tasks`. If a future member's registry row declares a distinct native time, offer a second task `daily-digest-<member>` at that time, record it in `schedule.companion_tasks`, and register it only when a scheduler exists.
 
 Keep companion tasks minimal. Weekly cadences are handled by the daily task's gating, not by separate tasks. Without a scheduler, the user can ask for that member by hand.
+
+## Handing over from the old task id
+
+Before 1.1.0 the daily task was registered under the conductor's old name (see the map in `references/updates.md` → "Renamed skills"). Its prompt invokes the old name, which is now a deprecated stub that forwards to this skill, so an old task keeps producing the digest until it is handed over. Two rules keep it to one digest a day:
+
+- **The stub stands down.** When the stub runs unattended and finds `daily-digest-daily` in the scheduler's task list, or `schedule.task_id` set to `daily-digest-daily`, it exits without a digest.
+- **The handover happens on an attended run**, after the config migration and with the user's OK, because it changes a scheduled task:
+  1. List scheduled tasks. If an old-id task exists, offer one 🟡: *"Your daily task still uses the old name. Want me to move it to `daily-digest-daily` at the same time and remove the old one?"*
+  2. On a yes, register `daily-digest-daily` (Path A) with the old task's time and timezone and the prompt above, set `schedule.task_id`, and list tasks again to confirm the new one exists.
+  3. Only then delete or disable the old task, and list tasks once more to confirm exactly one daily digest task remains. If the old task can't be removed, say so and leave the stub's stand-down rule to keep it silent.
+  4. Path B (no scheduling tool): give the user the new prompt and the two steps (create the new task, delete the old one), and set `schedule.task_id` once they confirm.
+- **On a no**, keep the old task and record `schedule.task_handover_declined: true` so the offer doesn't repeat daily. The old task keeps working through the stub until the stub is removed in a later release; ask again then.
 
 ## Changing the schedule
 1. Update `schedule.time` / `schedule.timezone` in `config.json`.

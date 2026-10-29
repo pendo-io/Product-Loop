@@ -1,8 +1,8 @@
 ---
 name: competitor-release-producer
-description: 'Produces a digest of competitor releases relevant to a PM. Reads the competitor releases you point it at (pasted release notes, changelog or release-notes pages, RSS feeds, or your own competitor-release tracker in Notion, Airtable, or similar), keeps the ones your tracker marks relevant (when it triages them) that fall in your product areas or that name you as an owner, spots what is NEW since the last run, and renders a short digest in chat. It also emits a delta-only structured update that a digest composer such as attention-radar folds into the daily digest''s 🧭 Competitive watch category. Single owner of the 🧭 Competitive watch lens and the per-release relevance question. Not for composing the daily digest; use attention-radar. Read-only on every source; writes only its own config. Use for a PM''s daily or on-demand competitive read. Triggers: "what did competitors ship", "competitor releases", "competitive watch", "what''s Competitor A doing", "competitor signal in my area".'
+description: 'Produces a digest of competitor releases relevant to a PM. Reads the competitor releases you point it at (pasted release notes, changelog or release-notes pages, RSS feeds, or your own competitor-release tracker in Notion, Airtable, or similar), keeps the ones your tracker marks relevant (when it triages them) that fall in your product areas or that name you as an owner, spots what is NEW since the last run, and renders a short digest in chat. It also emits a delta-only structured update that a digest composer such as digest-composer folds into the daily digest''s 🧭 Competitive watch category. Single owner of the 🧭 Competitive watch lens and the per-release relevance question. Not for composing the daily digest; use digest-composer. Read-only on every source; writes only its own config. Use for a PM''s daily or on-demand competitive read. Triggers: "what did competitors ship", "competitor releases", "competitive watch", "what''s Competitor A doing", "competitor signal in my area".'
 license: MIT. LICENSE has complete terms
-compatibility: Standalone. Works on pasted release notes with no connectors. Optional sources, used if connected, are a web fetch tool (changelogs, release-notes pages, RSS), and a Notion, Airtable, or similar connector for your own competitor-release tracker or feature tracker. Optional companion, attention-radar, composes its output into a daily digest.
+compatibility: Standalone. Works on pasted release notes with no connectors. Optional sources, used if connected, are a web fetch tool (changelogs, release-notes pages, RSS), and a Notion, Airtable, or similar connector for your own competitor-release tracker or feature tracker. Optional companion, digest-composer, composes its output into a daily digest.
 metadata:
   author: Pendo Product Operations
   version: "1.0.0"
@@ -22,11 +22,13 @@ A **producer**: it owns one signal (competitor releases) and each run hands over
 
 - **Standalone (default).** Run on its own, it renders its own readable digest in chat (see "Standalone
   digest" below). Nothing else needs to be installed.
-- **Feeding a daily digest.** When a digest composer such as `attention-radar`, or an orchestrator that
+- **Feeding a daily digest.** When a digest composer such as `digest-composer`, or an orchestrator that
   runs producers daily, is present, it hands over the structured output instead, and the composer folds
   it into the daily digest's **🧭 Competitive watch** category. This producer adds no section of its own
-  in that mode. `attention-radar` is in https://github.com/pendo-io/Product-Loop; if it isn't installed,
-  say so once and offer to install it, never block.
+  in that mode. `digest-composer` is in https://github.com/pendo-io/Product-Loop. A setup from before
+  its 1.1.0 rename may have the full composer under its old name; that copy counts as installed too (a
+  deprecated stub, whose description starts with "Deprecated", does not). If no composer is installed,
+  say so once and offer to install `digest-composer`, never block.
 
 Its job: answer *"which competitor releases landed in my areas that I might have missed: who shipped
 what, and does it map to a feature I own?"* It reads releases at the source you configure, so the PM
@@ -40,7 +42,7 @@ gets the release itself.
   text), a `via` reason, and a full-sentence `one_line`; `set_aside_count` carries its reasons; or
   the run is the calm line, or a named gap. When config is saved, `competitor_release.last_run` and `seen` are written
   back; when it isn't, the digest says so.
-- **Next consumer:** `attention-radar` or a daily-digest conductor, which folds it into
+- **Next consumer:** `digest-composer` or the `daily-digest` conductor, which folds it into
   🧭 Competitive watch. Run alone, the person who asked.
 - **Intent:** relevant and new, not everything. When steps run out, set aside rather than surface
   an out-of-area release.
@@ -63,7 +65,8 @@ Hard stops:
 - Never prompt on a scheduled run; stage the relevance questions and never wait for an answer.
 - Never report config as saved without reading it back, because a failed write would resurface
   seen releases next run; re-read `config.json` after each write and check the changed keys, and
-  confirm an installed `attention-radar`'s `SKILL.md` is on disk.
+  confirm an installed composer's `SKILL.md` is on disk (`digest-composer`, or the full composer
+  under its pre-1.1.0 name).
 
 **Authority.** Every write this skill can make:
 
@@ -72,7 +75,7 @@ Hard stops:
   config was saved.
 - Setup answers (focus areas, competitors, sources) saved to `config.json` only when the user
   agrees.
-- A companion install: `attention-radar`, only when the user accepts the offer.
+- A companion install: `digest-composer`, only when the user accepts the offer.
 
 Read-only on every source (tracker, changelog, RSS, feature tracker).
 
@@ -118,7 +121,7 @@ notes (attended runs), or emit nothing and name the gap (unattended runs). Never
 All identity comes from config; nothing is hardcoded. See `config.example.json`.
 
 **Where the config lives.** Run alone, the producer keeps its own `config.json` next to the skill.
-When the `daily-digest-conductor` runs it, the `competitor_radar` block (competitors, sources, fields,
+When the `daily-digest` conductor runs it, the `competitor_radar` block (competitors, sources, fields,
 `releases_db`, `competitors_watch`, `delta_anchor`, the seen list, and saved triage answers) lives in the conductor's shared config instead, so the user
 sets it once; read it from there and write `seen` and `triage_answers` back there. The delta anchor
 always lives in this producer's own section, `competitor_release.last_run`, in whichever file is in

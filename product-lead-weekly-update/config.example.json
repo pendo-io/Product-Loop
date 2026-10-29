@@ -62,7 +62,7 @@
       "tracks_customer_commitments": false
     },
     "schedule": {
-      "_comment": "Standalone only. Under the daily-digest-conductor the rollup day lives in the conductor's cadence (weekly-<day>) and this section is not used. If no day is set, the first working day of the week is the default.",
+      "_comment": "Standalone only. Under the `daily-digest` conductor the rollup day lives in the conductor's cadence (weekly-<day>) and this section is not used. If no day is set, the first working day of the week is the default.",
       "enabled": false,
       "day": "<your team's rollup day>",
       "time": "<HH:MM>",

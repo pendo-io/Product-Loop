@@ -166,7 +166,7 @@ If no, the rollup skips the customer commitments prompt.
 
 If the lead doesn't name a day, use the first working day of their week
 and say it's the default. Under the
-daily-digest-conductor, skip this step: the conductor stores the day as
+`daily-digest` conductor, skip this step: the conductor stores the day as
 its `cadence` for this skill. Then time (default: early on that day,
 before your team's meetings) and timezone if unknown. Show the scheduling
 steps in SKILL.md → "Scheduling (optional)".

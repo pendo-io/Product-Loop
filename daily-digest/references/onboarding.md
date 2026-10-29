@@ -30,7 +30,7 @@ Read `references/member-registry.md` → "Tiers" and "Role → default-enabled s
 - ☑ Daily feature validation: checks your feature records are accurate (runs daily)
 - ☑ Weekly PM update: drafts your weekly update (runs on your team's update day)
 - ☑ Producers: feedback and ideas, field calls, support trends, engineering progress, competitor releases (run daily, feed the digest)
-- ☑ Attention radar: composes the digest (runs last, every day)
+- ☑ Digest composer: composes the digest (runs last, every day)
 
 Let the user tick or untick. Record the result as `enabled_skills`.
 
@@ -38,7 +38,7 @@ Let the user tick or untick. Record the result as `enabled_skills`.
 
 **Enable ≠ install.** Ticking decides only what runs on the daily schedule. Installing makes a member invocable by name.
 
-Introduce the **daily digest** here: `attention-radar` leads every digest by **surfacing what's new and worth attention** in the user's world (customer signal first, then conflicts, then what's on track), **excluding the comms that already came straight to them**. Set expectations plainly: *it surfaces what you'd otherwise miss; it is **not** a to-do list or reminder system, so keep your own for that.* The more sources and producers are connected (Step 3), the sharper it gets.
+Introduce the **daily digest** here: `digest-composer` leads every digest by **surfacing what's new and worth attention** in the user's world (customer signal first, then conflicts, then what's on track), **excluding the comms that already came straight to them**. Set expectations plainly: *it surfaces what you'd otherwise miss; it is **not** a to-do list or reminder system, so keep your own for that.* The more sources and producers are connected (Step 3), the sharper it gets.
 
 ## Step 3: Collect shared inputs once
 
@@ -94,7 +94,7 @@ Store under `schedule` (`time`, `timezone`, `cadence: "daily"`). If the user won
 
 ## Step 6a: Name the report, and choose where it goes
 
-**Name the daily report.** Offer, in order: **Daily digest** (default), **Attention Radar**, or **their own name**. Store as `config.digest.report_name`. It's the headline label and how the conductor refers to the report.
+**Name the daily report.** Offer, in order: **Daily digest** (default), **Morning digest**, or **their own name**. Store as `config.digest.report_name`. A `report_name` already in a user's config is their choice: keep it, including a name from an earlier version's list. It's the headline label and how the conductor refers to the report.
 
 **Then choose where it goes**, from the output-channel registry (`references/outputs.md`): **this chat (default)**, Slack DM, a Slack channel, or a tracker page; pick one or several. Default to chat if they skip. Resolve each `ref`. Store in `digest.channels` and mention it's changeable any time ("change where my digest goes").
 
