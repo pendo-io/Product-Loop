@@ -123,8 +123,8 @@ reuse a rollup or PM update list from an earlier run in the conversation.
 ## Config
 
 Settings live in the `product_lead_weekly` section of the shared config
-file, by default `config.json` in the user's working folder. If the daily-
-digest-conductor's shared config (`.daily-digest/config.json` in the
+file, by default `config.json` in the user's working folder. If the
+`daily-digest` conductor's shared config (`.daily-digest/config.json` in the
 workspace) exists, use this skill's section of that file instead
 (shape in `config.example.json`). `config.*` below means that section. The
 sibling skills read the same file; leave their sections alone.

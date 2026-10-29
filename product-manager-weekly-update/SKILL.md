@@ -122,7 +122,7 @@ don't reuse a draft from an earlier run in the conversation.
 ## Config
 
 Settings live in the `pm_weekly` section of a shared config file, by
-default `config.json` in the user's working folder. If the daily-digest-
+default `config.json` in the user's working folder. If the `daily-digest`
 conductor's shared config (`.daily-digest/config.json` in the workspace)
 exists, use this skill's section of that file instead (shape in
 `config.example.json`). `config.*` below means that section. The sibling
