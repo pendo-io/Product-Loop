@@ -99,7 +99,7 @@ Build confidence before you commit.
 | Skill | What it does |
 |---|---|
 | [`conviction-doc`](./conviction-doc/) | Draft and stress-test a pre-build conviction doc — evidence, tradeoffs, kill metrics, and a GTM launch score |
-| [`gtm-scoring`](./gtm-scoring/) | Score a launch across four dimensions (experience, adoption, competitive, enablement) and map it to a GTM tier |
+| [`gtm-scoring`](./gtm-scoring/) | Score a launch across four dimensions (experience, adoption, competitive, enablement) and map it to a GTM tier. The rubric is a basic example to adapt to your own launch process |
 | [`prototype-fidelity`](./prototype-fidelity/) | Build a UI prototype from a screenshot, treating the screenshot as the spec, with an optional usability audit |
 | `rice-score` | RICE scoring grounded in real Pendo data — reach and impact pulled automatically (coming soon) |
 | `idea-rank` | Prioritise roadmap ideas by vote volume and customer segment (coming soon) |
